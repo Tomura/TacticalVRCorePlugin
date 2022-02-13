@@ -1,0 +1,43 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "TacticalVRCore",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "Tomura",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "TacticalVRCore",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},		
+        {
+            "Name": "TacticalVRCoreEditor",
+            "Type": "UncookedOnly",
+            "LoadingPhase": "PostEngineInit"
+        }
+	],
+	"Plugins": [
+		{
+			"Name": "VRExpansionPlugin",
+			"Enabled": true
+		},
+		{
+			"Name": "ForceTubeVRForUE4",
+			"Enabled": true
+		},
+        {
+            "Name": "OpenXRExpansionPlugin",
+            "Enabled": true
+        }
+    ]
+}
