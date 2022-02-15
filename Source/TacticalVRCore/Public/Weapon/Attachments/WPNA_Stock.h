@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Abstract)
 class TACTICALVRCORE_API AWPNA_Stock : public ATVRWeaponAttachment
 {
 	GENERATED_BODY()

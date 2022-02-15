@@ -461,14 +461,6 @@ void UTVRMagWellComponent::OnOwnerGripReleased(ATVRCharacter* OwningChar,UGripMo
 		{			
 			OtherHand->DropObjectByInterface(GetCurrentMagazine());
 		}
-		// for(const FBPActorGripInformation& GripInfo: OtherHand->GrippedObjects)
-		// {
-		// 	if(GripInfo.GrippedObject == GetCurrentMagazine())
-		// 	{
-		// 		// we know that magazines implement the interface
-		// 		OtherHand->DropObjectByInterface(GetCurrentMagazine());
-		// 	}
-		// }
 	}
 }
 
@@ -485,8 +477,6 @@ void UTVRMagWellComponent::GetSplineTransform(const FVector& inLoc, FTransform& 
 		MyMagSpline->FindLocationClosestToWorldLocation(inLoc, ESplineCoordinateSpace::World));
 	if(bUseCurve)
 	{
-		// const int32 LastIdx = MyMagSpline->GetNumberOfSplinePoints() - 1;
-		// const float LastKey = LastIdx;
 		const float Key = MyMagSpline->FindInputKeyClosestToWorldLocation(inLoc);
 		
 		const float Roll = MagRoll.GetRichCurveConst()->Eval(Key);

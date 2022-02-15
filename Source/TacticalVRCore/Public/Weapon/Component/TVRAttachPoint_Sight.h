@@ -16,16 +16,6 @@ public:
 	// Sets default values for this component's properties
 	UTVRAttachPoint_Sight(const FObjectInitializer& OI);
 
-#if WITH_EDITOR
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-	virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent) override;
-#endif
-	
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:	
 	virtual TSubclassOf<class ATVRWeaponAttachment> GetCurrentAttachmentClass() const override;
 	virtual void GetAllowedAttachments(TArray<TSubclassOf<class ATVRWeaponAttachment>>& OutAllowedAttachments) const override;
 

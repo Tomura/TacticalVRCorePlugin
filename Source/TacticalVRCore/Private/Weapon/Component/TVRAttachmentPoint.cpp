@@ -11,7 +11,8 @@ UTVRAttachmentPoint::UTVRAttachmentPoint(const FObjectInitializer& OI) : Super(O
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-	CurrentAttachment = nullptr;	
+	CurrentAttachment = nullptr;
+	PreferredVariant = 0;
 }
 
 void UTVRAttachmentPoint::OnWeaponAttachmentAttached(ATVRWeaponAttachment* NewAttachment)
@@ -47,7 +48,22 @@ void UTVRAttachmentPoint::OnRegister()
 
 void UTVRAttachmentPoint::OnConstruction()
 {
-	// SetChildActorClass(GetCurrentAttachmentClass());
+	if(GetCurrentAttachmentClass() && GetCurrentAttachmentClass() != GetChildActorClass())
+	{
+		SetChildActorClass( GetCurrentAttachmentClass());
+	}
+	else if (GetCurrentAttachmentClass() == nullptr) // firsts condition fails on null
+	{
+		SetChildActorClass(nullptr);
+	}
+	
+	if(GetChildActor())
+	{
+		if(auto WPNA = Cast<ATVRWeaponAttachment>(GetChildActor()))
+		{
+			WPNA->SetPreferredVariant(PreferredVariant);
+		}
+	}
 }
 
 

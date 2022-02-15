@@ -12,33 +12,6 @@ UTVRAttachPoint_Sight::UTVRAttachPoint_Sight(const FObjectInitializer& OI): Supe
 	CurrentSightClass = nullptr;
 }
 
-
-// Called when the game starts
-void UTVRAttachPoint_Sight::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-#if WITH_EDITOR
-void UTVRAttachPoint_Sight::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVRAttachPoint_Sight, CurrentSightClass))
-	{
-		SetChildActorClass(CurrentSightClass);
-	}
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-}
-
-void UTVRAttachPoint_Sight::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
-{
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVRAttachPoint_Sight, CurrentSightClass))
-	{
-		SetChildActorClass(CurrentSightClass);
-	}
-	Super::PostEditChangeChainProperty(PropertyChangedEvent);
-}
-#endif
-
 TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Sight::GetCurrentAttachmentClass() const
 {
 	return CurrentSightClass;

@@ -53,6 +53,9 @@ public:
 	) const {return false;}
 
 
+	UFUNCTION(Category = "Weapon Attachment", BlueprintImplementableEvent)
+	void SetPreferredVariant(uint8 Variant);
+	
 protected:
 	TSubclassOf<UStaticMeshComponent> StaticMeshClass;
 	// Called when the game starts or when spawned

@@ -7,36 +7,9 @@
 // Sets default values for this component's properties
 UTVRAttachPoint_PistolLight::UTVRAttachPoint_PistolLight(const FObjectInitializer& OI): Super(OI)
 {
+	CurrentLightClass = nullptr;
 }
 
-// Called when the game starts
-void UTVRAttachPoint_PistolLight::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// ...
-	
-}
-
-#if WITH_EDITOR
-void UTVRAttachPoint_PistolLight::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVRAttachPoint_PistolLight, CurrentLightClass))
-	{
-		SetChildActorClass(CurrentLightClass);
-	}
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-}
-
-void UTVRAttachPoint_PistolLight::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
-{
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVRAttachPoint_PistolLight, CurrentLightClass))
-	{
-		SetChildActorClass(CurrentLightClass);
-	}
-	Super::PostEditChangeChainProperty(PropertyChangedEvent);
-}
-#endif
 
 TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_PistolLight::GetCurrentAttachmentClass() const
 {

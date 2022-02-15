@@ -7,36 +7,8 @@
 // Sets default values for this component's properties
 UTVRAttachPoint_Laser::UTVRAttachPoint_Laser(const FObjectInitializer& OI): Super(OI)
 {
+	CurrentLaserClass = nullptr;
 }
-
-
-// Called when the game starts
-void UTVRAttachPoint_Laser::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// ...
-}
-
-#if WITH_EDITOR
-void UTVRAttachPoint_Laser::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVRAttachPoint_Laser, CurrentLaserClass))
-	{
-		SetChildActorClass(CurrentLaserClass);
-	}
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-}
-
-void UTVRAttachPoint_Laser::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
-{
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVRAttachPoint_Laser, CurrentLaserClass))
-	{
-		SetChildActorClass(CurrentLaserClass);
-	}
-	Super::PostEditChangeChainProperty(PropertyChangedEvent);
-}
-#endif 
 
 TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Laser::GetCurrentAttachmentClass() const
 {

@@ -28,6 +28,9 @@ void FTacticalVRCoreEditorModule::StartupModule()
 	PropertyModule.RegisterCustomClassLayout(
 		"TVRAttachPoint_Muzzle",
 		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRAttachPointMuzzleDetails::MakeInstance));
+	PropertyModule.RegisterCustomClassLayout(
+		"TVRAttachPoint_Stock",
+		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRAttachPointStockDetails::MakeInstance));
 	PropertyModule.NotifyCustomizationModuleChanged();
 }
 
@@ -41,4 +44,5 @@ void FTacticalVRCoreEditorModule::ShutdownModule()
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Light");
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_PistolLight");
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Muzzle");
+	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Stock");
 }

@@ -18,12 +18,14 @@
 #include "Weapon/Attachments/WPNA_PistolLight.h"
 #include "Weapon/Attachments/WPNA_Laser.h"
 #include "Weapon/Attachments/WPNA_Sight.h"
+#include "Weapon/Attachments/WPNA_Stock.h"
 
 #include "Weapon/Component/TVRAttachPoint_Laser.h"
 #include "Weapon/Component/TVRAttachPoint_Light.h"
 #include "Weapon/Component/TVRAttachPoint_Muzzle.h"
 #include "Weapon/Component/TVRAttachPoint_PistolLight.h"
 #include "Weapon/Component/TVRAttachPoint_Sight.h"
+#include "Weapon/Component/TVRAttachPoint_Stock.h"
 #include "Weapon/Component/TVRAttachPoint_Underbarrel.h"
 
 
@@ -285,3 +287,16 @@ public:
 	}
 };
 
+class FTVRAttachPointStockDetails : public FTVRAttachPointDetails<UTVRAttachPoint_Stock, AWPNA_Stock>
+{
+public:
+	FTVRAttachPointStockDetails() : FTVRAttachPointDetails<UTVRAttachPoint_Stock, AWPNA_Stock>(FString("CurrentAttachmentClass"))
+	{
+	}
+	
+	/** Makes a new instance of this detail layout class for a specific detail view requesting it */
+	static TSharedRef<IDetailCustomization> MakeInstance()
+	{
+		return MakeShareable(new FTVRAttachPointStockDetails());
+	}
+};

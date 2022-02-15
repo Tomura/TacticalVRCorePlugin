@@ -8,31 +8,6 @@ UTVRAttachPoint_Muzzle::UTVRAttachPoint_Muzzle(const FObjectInitializer& OI) : S
 	CurrentAttachmentClass = nullptr;
 }
 
-#if WITH_EDITOR
-void UTVRAttachPoint_Muzzle::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVRAttachPoint_Muzzle, CurrentAttachmentClass))
-	{
-		SetChildActorClass(CurrentAttachmentClass);
-	}
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-}
-
-void UTVRAttachPoint_Muzzle::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
-{
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVRAttachPoint_Muzzle, CurrentAttachmentClass))
-	{
-		SetChildActorClass(CurrentAttachmentClass);
-	}
-	Super::PostEditChangeChainProperty(PropertyChangedEvent);
-}
-#endif
-
-void UTVRAttachPoint_Muzzle::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
 TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Muzzle::GetCurrentAttachmentClass() const
 {
 	return CurrentAttachmentClass;

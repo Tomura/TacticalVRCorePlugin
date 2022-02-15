@@ -21,6 +21,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void OnRegister() override;
 
+	// virtual void CreateChildActor() override;
 
 	virtual void OnConstruction();
 	
@@ -35,7 +36,7 @@ public:
 
 	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)
 	FORCEINLINE class ATVRWeaponAttachment* GetCurrentAttachment() const  {return CurrentAttachment;}
-public:
+
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;
@@ -44,6 +45,9 @@ public:
 	
 	UPROPERTY(Category = "WeaponAttachment", EditDefaultsOnly)
 	bool bSpawnAttachmentOnBeginPlay;
+	
+	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
+	uint8 PreferredVariant;
 
 	UPROPERTY(Category = "WeaponAttachment", BlueprintAssignable)
 	FOnWeaponAttachmentAttachedDelegate EventOnWeaponAttachmentAttached;
