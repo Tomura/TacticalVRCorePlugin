@@ -112,7 +112,6 @@ ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
 	TwoHandAngularStiffness = TwoHandStiffness * 1.5f;
 	TwoHandAngularDamping = TwoHandDamping * 1.4f;
 	
-	bHasMagReleaseNearMagazine = false;
 	bHasMagReleaseOnPrimaryGrip = true;
 	bHasBoltReleaseNearPrimaryGrip = true;
 
@@ -429,26 +428,25 @@ void ATVRGunBase::ClosestGripSlotInRange_Implementation(FVector WorldLocation, b
     }
     else
     {
-    	if(OverridePrefix == ATVRWeaponAttachment::NAME_GripOverride)
+    	// Check for Underbarrel Attachment (Foregrip, Launcher), we will always prefer it
+    	UTVRAttachPoint_Underbarrel* AttachPnt = GetAttachPoint_Underbarrel();
+    	if(AttachPnt)
     	{
-    		if(UTVRAttachPoint_Underbarrel* AttachPnt = GetAttachPoint_Underbarrel())
+    		if(const auto WPNAttachment = AttachPnt->GetCurrentAttachment())
     		{
-    			if(ATVRWeaponAttachment* WPNAttachment = AttachPnt->GetCurrentAttachment())
+    			if(WPNAttachment->GetGripSlot(WorldLocation, CallingController, SlotWorldTransform, SlotName))
     			{
-    				if(WPNAttachment->GetGripSlot(WorldLocation, CallingController, SlotWorldTransform, SlotName))
-    				{    					
-    					bHadSlotInRange = true;
-    					
-    					const UTVRCoreGameplaySettings* TVRGameplaySettingsCDO = GetDefault<UTVRCoreGameplaySettings>();
-    					if(TVRGameplaySettingsCDO->GunStockType == EStockType::ST_PhysicalStock)
-    					{
-    						const float SecondaryGripDistance = 35.f;
-    						const FVector SecondaryLoc = GetPrimaryGripSlot()->GetComponentLocation() + GetActorRightVector() * SecondaryGripDistance;
-    						const FRotator SecondaryRot = UKismetMathLibrary::MakeRotFromXZ(GetActorRightVector(), GetActorUpVector());
-    						SlotWorldTransform = FTransform(SecondaryRot, SecondaryLoc, FVector::OneVector);
-    					}    					
-    					return;
-    				}
+    				bHadSlotInRange = true;
+    				
+    				const UTVRCoreGameplaySettings* TVRGameplaySettingsCDO = GetDefault<UTVRCoreGameplaySettings>();
+    				if(TVRGameplaySettingsCDO->GunStockType == EStockType::ST_PhysicalStock)
+    				{
+    					const float SecondaryGripDistance = 35.f;
+    					const FVector SecondaryLoc = GetPrimaryGripSlot()->GetComponentLocation() + GetActorRightVector() * SecondaryGripDistance;
+    					const FRotator SecondaryRot = UKismetMathLibrary::MakeRotFromXZ(GetActorRightVector(), GetActorUpVector());
+    					SlotWorldTransform = FTransform(SecondaryRot, SecondaryLoc, FVector::OneVector);
+    				}    					
+    				return;
     			}
     		}
     	}
@@ -894,28 +892,31 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
             SavedSecondaryHand = SecondaryHand;
             SavedSecondaryHandRelTransform = GripInfo.SecondaryGripInfo.SecondaryRelativeTransform;
         	SavedSecondarySlotName = GripInfo.SecondaryGripInfo.bIsSlotGrip ? GripInfo.SecondaryGripInfo.SecondarySlotName : NAME_None;
-            bool bHadSlotInRange = false;
+        	
             bool bHadSecondarySlotInRange = false;
-            FTransform SlotTransform;
-            FName SlotName = EName::NAME_None;
+            FTransform SecondarySlotTransform;
+            FName TempSecondaryName = EName::NAME_None;
+        	
             Execute_ClosestGripSlotInRange(this, SavedSecondaryHand->GetComponentLocation(), true,
-	            bHadSecondarySlotInRange, SlotTransform, SlotName,
+	            bHadSecondarySlotInRange, SecondarySlotTransform, TempSecondaryName,
 	            SavedSecondaryHand.Get(), EName::NAME_None
             );
-        	if(!bHadSecondarySlotInRange) // we might have to look for attachment grips
-        	{
-        		Execute_ClosestGripSlotInRange(this, SavedSecondaryHand->GetComponentLocation(), true,
-					bHadSecondarySlotInRange, SlotTransform, SlotName,
-					SavedSecondaryHand.Get(), UnderbarrelSlotName
-				);
-        	}
+        	
+            bool bHadSlotInRange = false;
+            FName SlotName = EName::NAME_None;        	
+        	FTransform SlotTransform;
+        	
             Execute_ClosestGripSlotInRange(this, GrippingHand->GetComponentLocation(), false,
                 bHadSlotInRange, SlotTransform, SlotName,
                 SavedSecondaryHand.Get(), EName::NAME_None
             );
+        	
             if(bHadSecondarySlotInRange && !bHandSwapToPrimaryGripSlot)
             {
-                SavedSecondaryHand->GripObjectByInterface(this, GetActorTransform(), false, EName::NAME_None, EName::NAME_None, false);
+                const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SecondarySlotTransform);
+                SavedSecondaryHand->GripObjectByInterface(this, RelativeSocketTransform,
+                	true, EName::NAME_None,
+                	SavedSecondarySlotName, true);
                 VRGripInterfaceSettings.bAllowMultipleGrips = true;
                 return true;
             }
@@ -924,8 +925,8 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
                 ATVRCharacter* MyChar = Cast<ATVRCharacter>(SavedSecondaryHand->GetOwner());
                 if(MyChar)
                 {
-                    FTransform SocketTransformWS = GetPrimaryHandSocket()->GetHandSocketTransform(SavedSecondaryHand.Get());
-                	const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SocketTransformWS);
+                    // FTransform SocketTransformWS = GetPrimaryHandSocket()->GetHandSocketTransform(SavedSecondaryHand.Get());
+                	const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SlotTransform);
                     SavedSecondaryHand->GripObjectByInterface(this, RelativeSocketTransform, true, EName::NAME_None, PrimarySlotName, true);
                 	return true;
                 }

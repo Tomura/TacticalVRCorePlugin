@@ -1097,13 +1097,6 @@ bool ATVRCharacter::AttemptToSecondaryGripObject(const FTransform& GripTransform
 		FTransform SlotWorldTransform;
 		FName SlotName;
 		FName OverridePrefix = EName::NAME_None;
-		if(Hit.GetActor())
-		{
-			if(ATVRWeaponAttachment* WPNAttachment = Cast<ATVRWeaponAttachment>(Hit.GetActor()))
-			{
-				OverridePrefix = WPNAttachment->GetGripSlotOverride();
-			}
-		}
 		IVRGripInterface::Execute_ClosestGripSlotInRange(ObjectToGrip, Hit.ImpactPoint, true, bHadSlotInRange, SlotWorldTransform,  SlotName, Hand, OverridePrefix);
 		if(bHadSlotInRange)
 		{

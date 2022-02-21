@@ -10,8 +10,30 @@ UTVRAttachPoint_PistolLight::UTVRAttachPoint_PistolLight(const FObjectInitialize
 	CurrentLightClass = nullptr;
 }
 
+bool UTVRAttachPoint_PistolLight::SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass)
+{
+	if(NewClass == nullptr)
+	{
+		CurrentLightClass = nullptr;
+		OnConstruction();
+		return true;
+	}
+	
+	if(NewClass->IsChildOf(AWPNA_PistolLight::StaticClass()))
+	{
+		const TSubclassOf<AWPNA_PistolLight> TestClass = *NewClass;
+		if(AllowedLights.Find(TestClass) != INDEX_NONE)
+		{
+			CurrentLightClass = TestClass;
+			OnConstruction();
+			return true;
+		}
+	}
+	return false;
+}
 
-TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_PistolLight::GetCurrentAttachmentClass() const
+
+TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_PistolLight::GetCurrentAttachmentClass_Internal() const
 {
 	return CurrentLightClass;
 }

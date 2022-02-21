@@ -2,6 +2,7 @@
 
 #include "TacticalVRCoreEditor.h"
 #include "TVRAttachPointDetails.h"
+#include "TVRGunDetails.h"
 
 IMPLEMENT_MODULE(FTacticalVRCoreEditorModule, TacticalVRCoreEditor);
 
@@ -32,6 +33,10 @@ void FTacticalVRCoreEditorModule::StartupModule()
 		"TVRAttachPoint_Stock",
 		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRAttachPointStockDetails::MakeInstance));
 	PropertyModule.NotifyCustomizationModuleChanged();
+
+	// PropertyModule.RegisterCustomClassLayout(
+	// 	"TVRGunBase",
+	// 	FOnGetDetailCustomizationInstance::CreateStatic(&FTVRGunDetails::MakeInstance));
 }
 
 void FTacticalVRCoreEditorModule::ShutdownModule()
@@ -45,4 +50,5 @@ void FTacticalVRCoreEditorModule::ShutdownModule()
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_PistolLight");
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Muzzle");
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Stock");
+	// PropertyModule.UnregisterCustomClassLayout("TVRGunBase");
 }

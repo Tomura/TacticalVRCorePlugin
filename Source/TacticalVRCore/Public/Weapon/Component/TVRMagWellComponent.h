@@ -97,6 +97,7 @@ public:
      * @returns a pointer to the magazine spline
      */
 	USplineComponent* GetMagSpline() const;
+	USplineComponent* FindMagSpline() const;
 
     /**
      * Repositions the magazine to the desired position
@@ -113,6 +114,8 @@ public:
      * Event Called when the mag is fully ejected and not constrained by the Magwell anymore.
      */
 	virtual void OnMagFullyEjected();
+
+	virtual void OnMagDestroyed();
 
 	/**
 	 * @returns True if the magazine is fully ejected, i.e. left the magwell and is not constrained by it anymore.
@@ -179,9 +182,17 @@ public:
 	FOnMagReleasePressedDelegate EventOnMagReleasePressed;
 	UPROPERTY(Category = "Magazine", BlueprintAssignable)
 	FOnMagReleaseReleasedDelegate EventOnMagReleaseReleased;
+
+	bool HasMagRelease() const {return bHasMagRelease;}
+
+	UFUNCTION(Category="Magazine", BlueprintCallable)
+	virtual class ATVRMagazine* SpawnMagazineAttached(TSubclassOf<ATVRMagazine> MagazineClass = nullptr);
+
+	TSubclassOf<ATVRMagazine> DefaultMagazineClass;
 	
 protected:
     /** Reference to the current magazine. Check Validitiy if you want to be safe. */
+	UPROPERTY()
 	class ATVRMagazine* CurrentMagazine;
 
     /**
@@ -192,12 +203,15 @@ protected:
      * The Z axis of each point shall point forward.
      * During mag drop the magazine will be facing this way.
      */
-	class USplineComponent* MagSpline;
+	class USplineComponent* CachedMagSpline;
 
     /** Returns true of the mag is being dropped right now */
 	bool bIsMagFree;
 
     bool bMagReleasePressed;
+
+	UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditDefaultsOnly)
+	bool bHasMagRelease;
 
     /** Velocity Vector of Attached Magazine */
     FVector MagVelocity;

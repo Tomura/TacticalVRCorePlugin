@@ -13,6 +13,8 @@ UTVRAttachmentPoint::UTVRAttachmentPoint(const FObjectInitializer& OI) : Super(O
 	PrimaryComponentTick.bCanEverTick = false;
 	CurrentAttachment = nullptr;
 	PreferredVariant = 0;
+	RailType = ERailType::Picatinny;
+	CustomRailType = 0;
 }
 
 void UTVRAttachmentPoint::OnWeaponAttachmentAttached(ATVRWeaponAttachment* NewAttachment)
@@ -24,6 +26,16 @@ void UTVRAttachmentPoint::OnWeaponAttachmentAttached(ATVRWeaponAttachment* NewAt
 	}
 }
 
+TSubclassOf<ATVRWeaponAttachment> UTVRAttachmentPoint::GetCurrentAttachmentClass() const
+{
+	const auto AttachClass = GetCurrentAttachmentClass_Internal();
+	if(AttachClass)
+	{
+		return GetDefault<ATVRWeaponAttachment>(AttachClass)->GetReplacementClass(RailType, CustomRailType);
+	}
+	return AttachClass;
+}
+
 // Called when the game starts
 void UTVRAttachmentPoint::BeginPlay()
 {
@@ -33,17 +45,6 @@ void UTVRAttachmentPoint::BeginPlay()
 void UTVRAttachmentPoint::OnRegister()
 {
 	Super::OnRegister();
-	if(!IsTemplate())
-	{
-		if(GetCurrentAttachmentClass() && GetCurrentAttachmentClass() != GetChildActorClass())
-		{
-			SetChildActorClass( GetCurrentAttachmentClass());
-		}
-		else if (GetCurrentAttachmentClass() == nullptr) // we need to force it
-		{
-			SetChildActorClass(nullptr);
-		}
-	}
 }
 
 void UTVRAttachmentPoint::OnConstruction()
@@ -57,15 +58,35 @@ void UTVRAttachmentPoint::OnConstruction()
 		SetChildActorClass(nullptr);
 	}
 	
-	if(GetChildActor())
+	if(!IsTemplate() && GetChildActor()) // this can create a double execution of setPreferredVariant, but it should be ok
 	{
-		if(auto WPNA = Cast<ATVRWeaponAttachment>(GetChildActor()))
+		if(const auto WPNA = Cast<ATVRWeaponAttachment>(GetChildActor()))
 		{
-			WPNA->SetPreferredVariant(PreferredVariant);
+			WPNA->SetVariant(PreferredVariant);
+			WPNA->SetRailType(RailType, CustomRailType);
 		}
 	}
 }
 
+void UTVRAttachmentPoint::CreateChildActor()
+{
+	Super::CreateChildActor();
+		
+	if(!IsTemplate() && GetChildActor())
+	{
+		if(auto WPNA = Cast<ATVRWeaponAttachment>(GetChildActor()))
+		{
+			WPNA->SetVariant(PreferredVariant);
+			WPNA->SetRailType(RailType, CustomRailType);
+		}
+	}
+}
+
+
+bool UTVRAttachmentPoint::SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass)
+{
+	return false;
+}
 
 // Called every frame
 void UTVRAttachmentPoint::TickComponent(float DeltaTime, ELevelTick TickType,

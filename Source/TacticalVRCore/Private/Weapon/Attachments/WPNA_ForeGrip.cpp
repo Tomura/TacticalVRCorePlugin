@@ -6,19 +6,24 @@
 
 AWPNA_ForeGrip::AWPNA_ForeGrip(const FObjectInitializer& OI) : Super(OI)
 {
-	GripSlotOverride = ATVRWeaponAttachment::NAME_GripOverride;
-
 	GripSlot = CreateDefaultSubobject<USceneComponent>(FName("GripSlotComponent"));
 	GripSlot->SetupAttachment(GetStaticMeshComponent());
+	PrimarySlotGripDistance = 15.f;
 }
 
 bool AWPNA_ForeGrip::GetGripSlot(const FVector& WorldLocation, class UGripMotionControllerComponent* CallingController, FTransform& OutTransform, FName& OutSlotName) const
 {
 	if(GetPrimaryHandSocket())
-	{		
-		OutSlotName = FName("ForeGrip");
-		OutTransform = GripSlot->GetComponentTransform();
-		return true;
+	{
+		OutTransform = GetPrimaryHandSocket()->GetComponentTransform();
+
+		const float GripDistanceSq = FVector::DistSquared(OutTransform.GetLocation(), WorldLocation);
+		const float AllowedDistanceSq = PrimarySlotGripDistance*PrimarySlotGripDistance;
+		if(GripDistanceSq <= AllowedDistanceSq)
+		{
+			OutSlotName = GetPrefixedSocketName(GetPrimaryHandSocket());
+			return true;
+		}
 	}
 	return false;
 }
@@ -29,7 +34,7 @@ bool AWPNA_ForeGrip::IsGripped() const
 	{
 		if(const FBPActorGripInformation* GripInfo = GetGunOwner()->GetSecondaryGripInfo())
 		{
-			if(GripInfo->SecondaryGripInfo.SecondarySlotName == FName("ForeGrip"))
+			if(GripInfo->SecondaryGripInfo.SecondarySlotName == GetPrefixedSocketName(GetPrimaryHandSocket()))
 			{
 				return true;
 			}
@@ -40,7 +45,7 @@ bool AWPNA_ForeGrip::IsGripped() const
 
 UHandSocketComponent* AWPNA_ForeGrip::GetHandSocket_Implementation(FName SlotName) const
 {
-	if(GetPrimaryHandSocket() && SlotName == FName("ForeGrip"))
+	if(GetPrimaryHandSocket() && SlotName == GetPrefixedSocketName(GetPrimaryHandSocket()))
 	{
 		return GetPrimaryHandSocket();
 	}

@@ -38,4 +38,8 @@ public:
 	virtual class UHandSocketComponent* GetPrimaryHandSocket_Implementation() const {return nullptr;}
 
 	virtual class UHandSocketComponent* GetHandSocket_Implementation(FName SlotName) const override;
+
+protected:
+	UPROPERTY(Category="Foregrip", EditDefaultsOnly)
+	float PrimarySlotGripDistance;
 };

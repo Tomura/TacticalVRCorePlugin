@@ -35,6 +35,15 @@ protected:
 	UPROPERTY(Category = "Laser", EditDefaultsOnly)
 	float BaseThickness;
 
+	
+	UPROPERTY(Category = "Laser", EditDefaultsOnly)
+	FName LaserOnMaterialParam;	
+	UPROPERTY(Category = "Laser", EditDefaultsOnly)
+	uint8 LaserMaterialSlot;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* LaserMaterialInstance;
+
 public:
 	AWPNA_Laser(const FObjectInitializer& OI);
 
@@ -44,9 +53,10 @@ protected:
 public:
 	virtual void Tick(float DeltaSeconds) override;
 
-	UFUNCTION()
+	UFUNCTION(Category= "Light", BlueprintCallable)
 	virtual void ToggleLaser(class UGripMotionControllerComponent* UsingHand);
 
+	UFUNCTION(Category= "Light", BlueprintCallable)
 	virtual bool IsLaserOn() const {return bIsLaserOn;}
 
 

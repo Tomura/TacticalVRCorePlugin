@@ -23,34 +23,25 @@ UTVRMagWellComponent::UTVRMagWellComponent(const FObjectInitializer& OI) : Super
 	MagazineSound = nullptr;
 	bIsMagFree = false;
     CurrentMagazine = nullptr;
-    MagSpline = nullptr;
+    CachedMagSpline = nullptr;
     MagVelocity = FVector::ZeroVector;
     
     bMagReleasePressed = false;
 	bUseCurve = false;
 	bWasReleasedByHand = true;
 	bNeedsToBeReleasedByHand = false;
+	bHasMagRelease = false;
+	DefaultMagazineClass = nullptr;
 }
 
 void UTVRMagWellComponent::BeginPlay()
 {
     Super::BeginPlay();
 
-    TArray<USceneComponent*> Children;
-    GetChildrenComponents(true, Children);
-    if(Children.Num() > 0)
-    {
-        for(USceneComponent* TestComp : Children)
-        {
-	        {
-		        USplineComponent* TestSpline = Cast<USplineComponent>(TestComp);
-	        	if(!MagSpline && TestSpline != nullptr)
-	        	{
-	        		MagSpline = TestSpline;
-	        	}
-	        }
-        }
-    }
+	if(!CachedMagSpline)
+	{
+		CachedMagSpline = FindMagSpline();
+	}
 
 	if(MagazineSound && !MagAudioComp)
 	{
@@ -59,6 +50,8 @@ void UTVRMagWellComponent::BeginPlay()
 		MagAudioComp->SetSound(MagazineSound);
 		MagAudioComp->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	}
+
+	SpawnMagazineAttached();
 }
 
 void UTVRMagWellComponent::BeginDestroy()
@@ -120,12 +113,12 @@ void UTVRMagWellComponent::OnBeginOverlap(UPrimitiveComponent* OverlappedCompone
     if(CanInsertMag())
     {
         ATVRMagazine* Mag = Cast<ATVRMagazine>(OtherActor);
-        if(Mag != nullptr && IsAllowedMagType(Mag->GetClass()))
+        if(Mag != nullptr && IsAllowedMagType(Mag->GetClass()) && Mag->VRGripInterfaceSettings.bIsHeld)
         {
             // const FTransform SplineTransform = GetMagSpline()->GetTransformAtTime(0.f, ESplineCoordinateSpace::World, false);
         	FTransform SplineTransform;
         	GetSplineTransform(Mag->GetAttachOrigin()->GetComponentLocation(), SplineTransform);
-            if(Mag->TryAttachToWeapon(Gun->GetStaticMeshComponent(), TransformSplineToMagazineCoordinates(SplineTransform)))
+            if(Mag->TryAttachToWeapon(Gun->GetStaticMeshComponent(), this, TransformSplineToMagazineCoordinates(SplineTransform)))
             {
                 bIsMagFree = true;
                 //GetWorld()->GetTimerManager().SetTimerForNextTick(this, &UTVRMagWellComponent::RepositionMagazine);
@@ -148,11 +141,28 @@ void UTVRMagWellComponent::OnBeginOverlap(UPrimitiveComponent* OverlappedCompone
 
 USplineComponent* UTVRMagWellComponent::GetMagSpline() const
 {
-    if(IsValid(MagSpline)) // Most of the time this should be valid, but in case the spline component is destroyed we need to detect it
+    if(CachedMagSpline) // Most of the time this should be valid, but in case the spline component is destroyed we need to detect it
     {
-        return MagSpline;
+        return CachedMagSpline;
     }
-    return nullptr;
+	return FindMagSpline();
+}
+
+USplineComponent* UTVRMagWellComponent::FindMagSpline() const
+{
+	TArray<USceneComponent*> Children;
+	GetChildrenComponents(true, Children);
+	if(Children.Num() > 0)
+	{
+		for(USceneComponent* TestComp : Children)
+		{
+			if(USplineComponent* TestSpline = Cast<USplineComponent>(TestComp))
+			{
+				return TestSpline;
+			}
+		}
+	}
+	return nullptr;
 }
 
 void UTVRMagWellComponent::RepositionMagazine()
@@ -264,6 +274,12 @@ void UTVRMagWellComponent::OnMagFullyEjected()
         bIsMagFree= false;
         CurrentMagazine = nullptr;
     }
+}
+
+void UTVRMagWellComponent::OnMagDestroyed()
+{
+	bIsMagFree= false;
+	CurrentMagazine = nullptr;
 }
 
 bool UTVRMagWellComponent::ShouldEjectMag() const
@@ -499,6 +515,65 @@ void UTVRMagWellComponent::GetSplineTransformAtTime(float inProgress, FTransform
 		const float Yaw = MagYaw.GetRichCurveConst()->Eval(inProgress);
 		outTransform = FTransform(FRotator(Pitch, Yaw, Roll)) * outTransform;
 	}
+}
+
+ATVRMagazine* UTVRMagWellComponent::SpawnMagazineAttached(TSubclassOf<ATVRMagazine> MagazineClass)
+{
+	if(GetCurrentMagazine() || !GetMagSpline())
+	{
+		return nullptr;
+	}
+
+	ATVRMagazine* MyMag = nullptr;
+	const auto& TempChildren = GetAttachChildren();
+	for(const auto TestChild : TempChildren)
+	{
+		if(auto TestMag = Cast<ATVRMagazine>(TestChild->GetOwner()))
+		{
+			MyMag = TestMag;
+		}
+	}
+	if(MyMag)
+	{
+		MyMag->Destroy();
+	}
+	
+	if(const auto World = GetWorld())
+	{
+		if(const auto Gun = GetGunOwner())
+		{
+			if(MagazineClass == nullptr)
+			{
+				if(AllowedMagazines.Num() > 0)
+				{
+					MagazineClass = AllowedMagazines[0];
+				}
+				else
+				{
+					return nullptr;
+				}
+			}
+			if(IsAllowedMagType(MagazineClass) && GetWorld())
+			{
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				SpawnParams.bAllowDuringConstructionScript = false;
+				// in theory we could allow spawn during construction script, but it would require addtional code like child actor components
+				
+				auto NewMag = World->SpawnActor<ATVRMagazine>(MagazineClass, SpawnParams);
+				if(NewMag)
+				{
+					FTransform SplineTransform;
+					GetSplineTransformAtTime(0.f, SplineTransform);
+					NewMag->TryAttachToWeapon(Gun->GetStaticMeshComponent(), this, TransformSplineToMagazineCoordinates(SplineTransform));
+					CurrentMagazine = NewMag;
+					OnMagFullyInserted();
+					return NewMag;
+				}
+			}
+		}
+	}
+	return nullptr;
 }
 
 FTransform UTVRMagWellComponent::TransformSplineToMagazineCoordinates(const FTransform& InTransform) const

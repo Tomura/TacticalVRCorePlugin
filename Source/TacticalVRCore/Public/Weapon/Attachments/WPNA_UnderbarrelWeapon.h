@@ -21,16 +21,12 @@ class TACTICALVRCORE_API AWPNA_UnderbarrelWeapon : public AWPNA_ForeGrip
 	USkeletalMeshComponent* Movables;
 
 	UPROPERTY(Category = "Weapon Attachment", BlueprintReadOnly, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	USceneComponent* SecondaryGripSlot;
-
-	UPROPERTY(Category = "Weapon Attachment", BlueprintReadOnly, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 	class UTVRTriggerComponent* TriggerComponent;
 
 	UPROPERTY(Category = "Weapon Attachment", BlueprintReadOnly, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
 	class UTVRGunFireComponent* FiringComponent;
 	
 public:
-	static FName PrimaryGripName;
 	
 	AWPNA_UnderbarrelWeapon(const FObjectInitializer& OI);
 	virtual void BeginPlay() override;
@@ -61,6 +57,11 @@ public:
 	
 	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
 	UTVRTriggerComponent* GetTriggerComponent() const {return TriggerComponent;}
+
+	
+	UFUNCTION(Category = "ForeGrip", BlueprintNativeEvent, BlueprintCallable)
+	class UHandSocketComponent* GetSecondaryHandSocket() const;
+	virtual class UHandSocketComponent* GetSecondaryHandSocket_Implementation() const {return nullptr;}
 	
 protected:
 	UFUNCTION(Category="Weapon Attachment", BlueprintNativeEvent)
@@ -93,7 +94,7 @@ protected:
 	/** Event that is fired when the bolt release is released. The action will count as unhandled when this event is not bound to anything */
 	UPROPERTY(Category = "Weapon Attachment", BlueprintAssignable)
 	FUnderbarrelWeaponActionEvent OnBoltReleaseReleasedEvent;
-
+	
 	UPROPERTY(Category = "Weapon Attachment|Recoil", EditDefaultsOnly)
 	FVector RecoilImpulse;
 	UPROPERTY(Category = "Weapon Attachment|Recoil", EditDefaultsOnly)

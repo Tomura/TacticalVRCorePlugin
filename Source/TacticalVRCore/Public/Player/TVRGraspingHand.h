@@ -299,7 +299,7 @@ protected:
 
 	// virtual void InitializeAndAttach(const FBPActorGripInformation& GripInfo, bool bIsSecondaryGrip, bool bSkipEvaluation = false);
 
-	virtual void RetrievePoses(const FBPActorGripInformation& GripInfo);
+	virtual void RetrievePoses(const FBPActorGripInformation& GripInfo, bool bIsSecondary);
 	
 	UFUNCTION(Category="Hand", BlueprintCallable)
 	virtual void SetFingerCollisions();

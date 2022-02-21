@@ -37,7 +37,7 @@ ATVRMagazine::ATVRMagazine(const FObjectInitializer& OI) : Super(OI)
     VRGripInterfaceSettings.bAllowMultipleGrips = false;
     VRGripInterfaceSettings.SecondaryGripType = ESecondaryGripType::SG_None;
 
-    bIsAttached = false;
+	AttachedMagWell = nullptr;
     AmmoCapacity = 10;
     CurrentAmmo = AmmoCapacity;
     MagInsertPercentage = 0.f;
@@ -89,15 +89,7 @@ void ATVRMagazine::Destroyed()
 {
 	if(IsInserted())
 	{
-		AActor* AttachRootActor = GetStaticMeshComponent()->GetAttachmentRootActor();
-		ATVRGunBase* GunOwner = AttachRootActor ? Cast<ATVRGunBase>(AttachRootActor): nullptr;
-		if(GunOwner)
-		{
-			if(UTVRMagWellComponent* MagWell = Cast<UTVRMagWellComponent>(GunOwner->GetMagInterface()))
-			{
-				MagWell->OnMagFullyEjected();
-			}
-		}
+		AttachedMagWell->OnMagDestroyed();
 	}
 	OnMagReleaseReleased();
 	Super::Destroyed();
@@ -126,7 +118,7 @@ void ATVRMagazine::ClosestGripSlotInRange_Implementation(FVector WorldLocation, 
 
 bool ATVRMagazine::DenyGripping_Implementation(UGripMotionControllerComponent* GripInitiator)
 {
-	if(bIsAttached)
+	if(IsInserted())
 	{
 		if(const auto Parent = GetRootComponent()->GetAttachParent())
 		{
@@ -158,7 +150,7 @@ void ATVRMagazine::OnGripRelease_Implementation(UGripMotionControllerComponent* 
 
 bool ATVRMagazine::SimulateOnDrop_Implementation()
 {
-	if(bIsAttached)
+	if(IsInserted())
 	{
 		return false;
 	}
@@ -212,18 +204,18 @@ void ATVRMagazine::OnMagFullyEjected(const FVector& AngularVelocity, const FVect
     GetStaticMeshComponent()->SetSimulatePhysics(true);
     GetStaticMeshComponent()->AddImpulse(LinearVelocity, EName::NAME_None, true);
     GetStaticMeshComponent()->AddAngularImpulseInDegrees(AngularVelocity, EName::NAME_None, true);
-    bIsAttached = false;
+	AttachedMagWell = nullptr;
 
     MagInsertPercentage = 0.f;
     ReInitGrip();
     BP_OnMagFullyEjected();
 }
 
-bool ATVRMagazine::TryAttachToWeapon(USceneComponent* AttachComponent, const FTransform& AttachTransform)
+bool ATVRMagazine::TryAttachToWeapon(USceneComponent* AttachComponent, UTVRMagWellComponent* MagWell, const FTransform& AttachTransform)
 {
-    if(VRGripInterfaceSettings.bIsHeld && !IsInserted())
+    if(!IsInserted())
     {
-        bIsAttached = true;
+    	AttachedMagWell = MagWell;
         
         const FAttachmentTransformRules AttachRule(EAttachmentRule::KeepWorld, true);
         GetStaticMeshComponent()->AttachToComponent(AttachComponent, AttachRule);
@@ -246,7 +238,7 @@ void ATVRMagazine::SetMagazineOriginToTransform(const FTransform& NewTransform)
 
 bool ATVRMagazine::IsInserted() const
 {
-    return bIsAttached;
+    return AttachedMagWell != nullptr;
 }
 
 bool ATVRMagazine::IsEmpty() const
@@ -296,35 +288,19 @@ bool ATVRMagazine::IsMagReleasePressed() const
 
 void ATVRMagazine::OnMagReleasePressed()
 {
-	if(IsInserted() && !bIsMagReleasePressed)
+	if(IsInserted() && !bIsMagReleasePressed && AttachedMagWell->HasMagRelease())
 	{
-		AActor* AttachRootActor = GetStaticMeshComponent()->GetAttachmentRootActor();
-		ATVRGunBase* GunOwner = AttachRootActor ? Cast<ATVRGunBase>(AttachRootActor): nullptr;
-		if(GunOwner && GunOwner->HasMagReleaseNearMagazine())
-		{			
-			if(UTVRMagWellComponent* MagWell = Cast<UTVRMagWellComponent>(GunOwner->GetMagInterface()))
-			{
-				MagWell->OnMagReleasePressed(true);
-			}
-			bIsMagReleasePressed = true;
-		}
+		AttachedMagWell->OnMagReleasePressed(true);
+		bIsMagReleasePressed = true;
 	}
 }
 
 void ATVRMagazine::OnMagReleaseReleased()
 {
-	if(IsInserted() && bIsMagReleasePressed )
+	if(IsInserted() && bIsMagReleasePressed && AttachedMagWell->HasMagRelease())
 	{
 		bIsMagReleasePressed = false;
-		AActor* AttachRootActor = GetStaticMeshComponent()->GetAttachmentRootActor();
-		ATVRGunBase* GunOwner = AttachRootActor ? Cast<ATVRGunBase>(AttachRootActor): nullptr;
-		if(GunOwner && GunOwner->HasMagReleaseNearMagazine())
-		{			
-			if(UTVRMagWellComponent* MagWell = Cast<UTVRMagWellComponent>(GunOwner->GetMagInterface()))
-			{
-				MagWell->OnMagReleaseReleased(true);
-			}
-		}
+		AttachedMagWell->OnMagReleaseReleased(true);
 	}
 }
 

@@ -8,7 +8,29 @@ UTVRAttachPoint_Underbarrel::UTVRAttachPoint_Underbarrel(const FObjectInitialize
 	CurrentAttachmentClass = nullptr;
 }
 
-TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Underbarrel::GetCurrentAttachmentClass() const
+bool UTVRAttachPoint_Underbarrel::SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass)
+{
+	if(NewClass == nullptr)
+	{
+		CurrentAttachmentClass = nullptr;
+		OnConstruction();
+		return true;
+	}
+	
+	if(NewClass->IsChildOf(AWPNA_ForeGrip::StaticClass()))
+	{
+		const TSubclassOf<AWPNA_ForeGrip> TestClass = *NewClass;
+		if(AllowedAttachments.Find(TestClass) != INDEX_NONE)
+		{
+			CurrentAttachmentClass = TestClass;
+			OnConstruction();
+			return true;
+		}
+	}
+	return false;
+}
+
+TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Underbarrel::GetCurrentAttachmentClass_Internal() const
 {
 	return CurrentAttachmentClass;
 }

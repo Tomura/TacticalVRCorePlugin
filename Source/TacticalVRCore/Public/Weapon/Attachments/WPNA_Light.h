@@ -14,13 +14,13 @@ class TACTICALVRCORE_API AWPNA_Light : public ATVRWeaponAttachment
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(Category = "Laser", EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
+	UPROPERTY(Category = "Light", EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
 	class UTVRHoverInputVolume* HoverInputComponent;
 	
-	UPROPERTY(Category = "Laser", EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
-	class UAudioComponent* LaserToggleSound;
+	UPROPERTY(Category = "Light", EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
+	class UAudioComponent* LightToggleSound;
 	
-	UPROPERTY(Category = "Laser", EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
+	UPROPERTY(Category = "Light", EditDefaultsOnly, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
 	class USpotLightComponent* SpotLight;
 
 public:
@@ -28,11 +28,20 @@ public:
 
 	virtual void BeginPlay() override;
 	
-	UFUNCTION()
+	UFUNCTION(Category= "Light", BlueprintCallable)
 	virtual void ToggleLight(class UGripMotionControllerComponent* UsingHand);
 
+	UFUNCTION(Category= "Light", BlueprintCallable)
 	virtual bool IsLightOn() const {return bIsLightOn;}
 
 protected:
 	bool bIsLightOn;
+	
+	UPROPERTY(Category = "Light", EditDefaultsOnly)
+	FName LightOnMaterialParam;	
+	UPROPERTY(Category = "Light", EditDefaultsOnly)
+	uint8 LightMaterialSlot;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* LightMaterialInstance;
 };

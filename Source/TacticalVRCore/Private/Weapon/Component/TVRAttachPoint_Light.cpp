@@ -10,7 +10,29 @@ UTVRAttachPoint_Light::UTVRAttachPoint_Light(const FObjectInitializer& OI): Supe
 	CurrentLightClass = nullptr;
 }
 
-TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Light::GetCurrentAttachmentClass() const
+bool UTVRAttachPoint_Light::SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass)
+{
+	if(NewClass == nullptr)
+	{
+		CurrentLightClass = nullptr;
+		OnConstruction();
+		return true;
+	}
+	
+	if(NewClass->IsChildOf(AWPNA_Light::StaticClass()))
+	{
+		const TSubclassOf<AWPNA_Light> TestClass = *NewClass;
+		if(AllowedLights.Find(TestClass) != INDEX_NONE)
+		{
+			CurrentLightClass = TestClass;
+			OnConstruction();
+			return true;
+		}
+	}
+	return false;
+}
+
+TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Light::GetCurrentAttachmentClass_Internal() const
 {
 	return CurrentLightClass;
 }

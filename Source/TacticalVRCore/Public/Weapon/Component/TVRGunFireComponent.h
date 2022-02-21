@@ -364,13 +364,16 @@ public:
 	virtual bool HasRoundLoaded() const;
 
 	virtual void StartEmpty();
-
+	
+	UFUNCTION(Category = "Firing", BlueprintCallable)
 	virtual void StartFire();
+	
 	UFUNCTION(Category = "Firing", Reliable, Server, WithValidation)
 	void ServerStartFire();
 	void ServerStartFire_Implementation();    
 	bool ServerStartFire_Validate() {return true;}
 	
+	UFUNCTION(Category = "Firing", BlueprintCallable)
 	virtual void StopFire();
 
 	UFUNCTION(Category = "Firing", Reliable, Server, WithValidation)

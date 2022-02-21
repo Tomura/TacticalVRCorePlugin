@@ -10,7 +10,28 @@ UTVRAttachPoint_Laser::UTVRAttachPoint_Laser(const FObjectInitializer& OI): Supe
 	CurrentLaserClass = nullptr;
 }
 
-TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Laser::GetCurrentAttachmentClass() const
+bool UTVRAttachPoint_Laser::SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass)
+{
+	if(NewClass == nullptr)
+	{
+		CurrentLaserClass = nullptr;
+		OnConstruction();
+		return true;
+	}
+	if(NewClass->IsChildOf(AWPNA_Laser::StaticClass()))
+	{
+		const TSubclassOf<AWPNA_Laser> TestClass = *NewClass;
+		if(AllowedLasers.Find(TestClass) != INDEX_NONE)
+		{
+			CurrentLaserClass = TestClass;
+			OnConstruction();
+			return true;
+		}
+	}
+	return false;
+}
+
+TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Laser::GetCurrentAttachmentClass_Internal() const
 {
 	return CurrentLaserClass;
 }

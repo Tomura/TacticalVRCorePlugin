@@ -90,10 +90,12 @@ public:
      * Tries to attach the magazine to a weapon
      * @param Weapon Weapon to attach the magazine to
      * @param AttachComponent Component of the weapon to attach the magazine to
+     * @param MagWell Corresponding Magwell
      * @param AttachTransform Transform that the magazines Attach Origin shall be attached to
      */
     virtual bool TryAttachToWeapon(USceneComponent* AttachComponent,
-                                   const FTransform& AttachTransform);
+		class UTVRMagWellComponent* MagWell,
+        const FTransform& AttachTransform);
 
     /**
      * Moves the Magazine so that the Transform of the Attach Origin Component aligns with the argument.
@@ -203,6 +205,9 @@ public:
 	UFUNCTION(Category = "Magazine", BlueprintNativeEvent, BlueprintCallable)
 	void UpdateRoundInstances();
 	virtual void UpdateRoundInstances_Implementation();
+	
+	UFUNCTION(Category="Magazine", BlueprintCallable)
+	TSubclassOf<class ATVRCartridge> GetCartridgeType() const {return CartridgeType;}
 
 	/** Radius of one round */
 	UPROPERTY(Category = "Magazine", EditDefaultsOnly)
@@ -251,9 +256,6 @@ public:
 	/** NYI start index for the magazine taper, for tapered pistol mags */
 	UPROPERTY(Category = "Magazine", EditDefaultsOnly)
 	int32 TaperStartIdx;
-
-
-	TSubclassOf<class ATVRCartridge> GetCartridgeType() const {return CartridgeType;}
 	
 	UPROPERTY(Category = "Magazine", EditDefaultsOnly)
 	TSubclassOf<class ATVRCartridge> CartridgeType;
@@ -282,8 +284,11 @@ protected:
     UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditAnywhere, meta=(EditCondition ="bNotFull", ClampMin=0, ClampMax=200))
     int32 CurrentAmmo;
 
-    /** Is Magazine attached to a weapon? */
+    /** Is Magazine attached to a weapon? DEPRECATED */
     bool bIsAttached;
+	
+	UPROPERTY(Category="Magazine", BlueprintReadOnly)
+	class UTVRMagWellComponent* AttachedMagWell;
 
     /** Scene Component that marks the Slot the hand is gripping */
     UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditAnywhere)

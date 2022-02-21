@@ -9,17 +9,12 @@
 #include "Weapon/Component/TVRTriggerComponent.h"
 
 
-FName AWPNA_UnderbarrelWeapon::PrimaryGripName(TEXT("UnderbarrelPrimary"));
-
 // Sets default values
 AWPNA_UnderbarrelWeapon::AWPNA_UnderbarrelWeapon(const FObjectInitializer& OI) : Super(OI)
 {
 	Movables = CreateDefaultSubobject<USkeletalMeshComponent>(FName(TEXT("Movables")));
 	Movables->SetupAttachment(GetStaticMeshComponent());
 	Movables->SetCollisionProfileName(COLLISION_NO_COLLISION);
-
-	SecondaryGripSlot = CreateDefaultSubobject<USceneComponent>(FName(TEXT("SecondaryGripSlotComponent")));
-	SecondaryGripSlot->SetupAttachment(GetStaticMeshComponent());
 
 	TriggerComponent = CreateDefaultSubobject<UTVRTriggerComponent>(FName(TEXT("Trigger")));
 
@@ -29,6 +24,7 @@ AWPNA_UnderbarrelWeapon::AWPNA_UnderbarrelWeapon(const FObjectInitializer& OI) :
     bMagReleasePressed = true;
 
 	PrimaryActorTick.bCanEverTick = true;
+	
 }
 
 void AWPNA_UnderbarrelWeapon::BeginPlay()
@@ -46,27 +42,33 @@ bool AWPNA_UnderbarrelWeapon::GetGripSlot (
 	FName& OutSlotName
 ) const
 {
-	const float MaxDistance = 10.f;
-	check(GetPrimaryHandSocket());
-	const FTransform PrimaryTransform = GetPrimaryHandSocket()->GetHandSocketTransform(CallingController);
-	if((WorldLocation - PrimaryTransform.GetLocation()).SizeSquared() <= MaxDistance * MaxDistance)
-	{		
-		Super::GetGripSlot(WorldLocation, CallingController, OutTransform, OutSlotName);
-		OutSlotName = PrimaryGripName;
-	}
-	else
+	if(Super::GetGripSlot(WorldLocation, CallingController, OutTransform, OutSlotName))
 	{
-		OutTransform = SecondaryGripSlot->GetComponentTransform();
-		OutSlotName = FName(TEXT("UnderbarrelSecondary"));
+		return true;
 	}
-	return true;
+	if(GetSecondaryHandSocket())
+	{
+		OutTransform = GetSecondaryHandSocket()->GetComponentTransform();
+		const float GripDistanceSq = FVector::DistSquared(OutTransform.GetLocation(), WorldLocation);
+		const float AllowedDistanceSq = PrimarySlotGripDistance*PrimarySlotGripDistance;
+		if(GripDistanceSq <= AllowedDistanceSq)
+		{
+			OutSlotName = GetPrefixedSocketName(GetSecondaryHandSocket());
+			return true;
+		}
+	}
+	return false;
 }
 
 UHandSocketComponent* AWPNA_UnderbarrelWeapon::GetHandSocket_Implementation(FName SlotName) const
 {
-	if(SlotName == PrimaryGripName)
+	if(const auto PrimaryHandSocket = Super::GetHandSocket_Implementation(SlotName))
 	{
-		return GetPrimaryHandSocket();
+		return PrimaryHandSocket;
+	}
+	if(SlotName == FName(TEXT("UnderbarrelSecondary")) && GetSecondaryHandSocket())
+	{
+		return GetSecondaryHandSocket();
 	}
 	return nullptr;
 }
@@ -75,14 +77,20 @@ void AWPNA_UnderbarrelWeapon::OnGripped(UGripMotionControllerComponent* Gripping
 	const FBPActorGripInformation& GripInformation, bool bIsSecondaryGrip)
 {
 	Super::OnGripped(GrippingController, GripInformation, bIsSecondaryGrip);
-	TriggerComponent->ActivateTrigger(GrippingController);
+	if(GripInformation.SecondaryGripInfo.SecondarySlotName == GetPrefixedSocketName(GetPrimaryHandSocket()))
+	{
+		TriggerComponent->ActivateTrigger(GrippingController);
+	}
 }
 
 void AWPNA_UnderbarrelWeapon::OnReleased(UGripMotionControllerComponent* ReleasingController,
 	const FBPActorGripInformation& GripInformation, bool bIsSecondaryGrip)
 {
 	Super::OnGripped(ReleasingController, GripInformation, bIsSecondaryGrip);
-	TriggerComponent->DeactivateTrigger();
+	if(GripInformation.SecondaryGripInfo.SecondarySlotName == GetPrefixedSocketName(GetPrimaryHandSocket()))
+	{
+		TriggerComponent->DeactivateTrigger();
+	}
 }
 
 bool AWPNA_UnderbarrelWeapon::OnMagReleasePressed()
@@ -134,7 +142,7 @@ bool AWPNA_UnderbarrelWeapon::IsGripped() const
 	{
 		if(const FBPActorGripInformation* GripInfo = GetGunOwner()->GetSecondaryGripInfo())
 		{
-			if(GripInfo->SecondaryGripInfo.SecondarySlotName == PrimaryGripName)
+			if(GripInfo->SecondaryGripInfo.SecondarySlotName == GetPrefixedSocketName((GetPrimaryHandSocket())))
 			{
 				return true;
 			}

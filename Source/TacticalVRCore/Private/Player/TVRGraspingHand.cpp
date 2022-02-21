@@ -555,7 +555,7 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 	}
 
 	bIsGripping = true;
-	RetrievePoses(GripInfo);
+	RetrievePoses(GripInfo,false);
 	InitializeAndAttach(GripInfo, false, false);
 
 	StopLerpHand();
@@ -625,7 +625,7 @@ void ATVRGraspingHand::OnSecondaryAddedOnOther(const FBPActorGripInformation& Gr
 		{
 			SetWeaponCollisionResponse(ECollisionResponse::ECR_Overlap);
 		}
-		RetrievePoses(GripInfo);
+		RetrievePoses(GripInfo, true);
 		InitializeAndAttach(GripInfo, true, false);
 		
 		StopLerpHand();
@@ -901,12 +901,12 @@ void ATVRGraspingHand::InitializeAndAttach(const FBPActorGripInformation& GripIn
 	SetupPhysicsIfNeededNative(false, false);
 }
 
-void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo)
+void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo, bool bIsSecondary)
 {
-	const bool bIsSlotGrip = GripInfo.SecondaryGripInfo.bIsSlotGrip ? GripInfo.SecondaryGripInfo.bIsSlotGrip : GripInfo.bIsSlotGrip;
+	const bool bIsSlotGrip = bIsSecondary ? GripInfo.SecondaryGripInfo.bIsSlotGrip : GripInfo.bIsSlotGrip;
 	if(bIsSlotGrip)
 	{
-		const FName GrippedSlot = GripInfo.SecondaryGripInfo.bIsSlotGrip ? GripInfo.SecondaryGripInfo.SecondarySlotName : GripInfo.SlotName;
+		const FName GrippedSlot = bIsSecondary ? GripInfo.SecondaryGripInfo.SecondarySlotName : GripInfo.SlotName;
 		const bool bImplementsInterface = GripInfo.GrippedObject->GetClass()->ImplementsInterface(UTVRHandSocketInterface::StaticClass());
 		UHandSocketComponent* HandSocket = bImplementsInterface ?
 			ITVRHandSocketInterface::Execute_GetHandSocket(GripInfo.GrippedObject, GrippedSlot) :

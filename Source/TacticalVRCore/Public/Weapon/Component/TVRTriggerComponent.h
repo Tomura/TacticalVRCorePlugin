@@ -73,7 +73,7 @@ public:
 	float GetTriggerResetValue() const {return TriggerReset;}
 
 	UFUNCTION(Category="Trigger", BlueprintCallable)
-	float DoesTriggerNeedReset() const {return bTriggerNeedsReset;}
+	bool DoesTriggerNeedReset() const {return bTriggerNeedsReset;}
 	
 
 	

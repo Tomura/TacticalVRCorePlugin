@@ -165,6 +165,8 @@ public:
 	
 	virtual void ClosestGripSlotInRange_Implementation(FVector WorldLocation, bool bSecondarySlot,  bool & bHadSlotInRange, FTransform & SlotWorldTransform, FName & SlotName, UGripMotionControllerComponent * CallingController = nullptr, FName OverridePrefix = NAME_None) override;
 
+	
+	
 	virtual USceneComponent* GetPrimaryGripSlot() const {return GetPrimaryHandSocket();}
 
 	virtual bool RequestsSocketing_Implementation(USceneComponent*& ParentToSocketTo, FName& OptionalSocketName, FTransform_NetQuantize& RelativeTransform) override;
@@ -397,7 +399,6 @@ public:
     void GetRecoilPointOfAttack(FTransform& OutTransform) const;
 	virtual void GetRecoilPointOfAttack_Implementation(FTransform& OutTransform) const;
 
-	bool HasMagReleaseNearMagazine() const { return bHasMagReleaseNearMagazine;}
 	bool HasMagReleaseOnPrimaryGrip() const { return bHasMagReleaseOnPrimaryGrip;}
 	bool HasBoltReleaseOnPrimaryGrip() const { return bHasBoltReleaseNearPrimaryGrip;}
 
@@ -504,14 +505,10 @@ protected:
     uint8 bHasLastRoundBoltHoldOpen : 1;
 	
 	UPROPERTY(Category = "Gun|Features", BlueprintReadOnly, EditDefaultsOnly)
-	uint8 bHasMagReleaseOnPrimaryGrip : 1;   
-	UPROPERTY(Category = "Gun|Features", BlueprintReadOnly, EditDefaultsOnly)
-	uint8 bHasMagReleaseNearMagazine : 1;
+	uint8 bHasMagReleaseOnPrimaryGrip : 1;
 
 	UPROPERTY(Category = "Gun|Features", BlueprintReadOnly, EditDefaultsOnly)
 	uint8 bHasBoltReleaseNearPrimaryGrip : 1;   
-	// UPROPERTY(Category = "Gun|Features", BlueprintReadOnly, EditDefaultsOnly)
-	// uint8 bHasMagReleaseNearMagazine : 1;
 	
 	/**
 	 * Whether our gun cycless automatically. Leave on true for Automatic or Halfautomatic weapons

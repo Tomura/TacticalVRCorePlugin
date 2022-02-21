@@ -8,7 +8,29 @@ UTVRAttachPoint_Muzzle::UTVRAttachPoint_Muzzle(const FObjectInitializer& OI) : S
 	CurrentAttachmentClass = nullptr;
 }
 
-TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Muzzle::GetCurrentAttachmentClass() const
+bool UTVRAttachPoint_Muzzle::SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass)
+{
+	if(NewClass == nullptr)
+	{
+		CurrentAttachmentClass = nullptr;
+		OnConstruction();
+		return true;
+	}
+	
+	if(NewClass->IsChildOf(AWPNA_Muzzle::StaticClass()))
+	{
+		const TSubclassOf<AWPNA_Muzzle> TestClass = *NewClass;
+		if(AllowedMuzzles.Find(TestClass) != INDEX_NONE)
+		{
+			CurrentAttachmentClass = TestClass;
+			OnConstruction();
+			return true;
+		}
+	}
+	return false;
+}
+
+TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Muzzle::GetCurrentAttachmentClass_Internal() const
 {
 	return CurrentAttachmentClass;
 }

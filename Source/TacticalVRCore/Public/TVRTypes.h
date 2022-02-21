@@ -43,4 +43,3 @@ struct FHysteresisValue
 		return bState;
 	}
 };
-

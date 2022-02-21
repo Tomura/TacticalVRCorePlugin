@@ -16,8 +16,9 @@ class TACTICALVRCORE_API UTVRAttachPoint_Underbarrel : public UTVRAttachmentPoin
 	
 public:
 	UTVRAttachPoint_Underbarrel(const FObjectInitializer& OI);
-	
-	virtual TSubclassOf<class ATVRWeaponAttachment> GetCurrentAttachmentClass() const override;
+
+	virtual bool SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass) override;
+	virtual TSubclassOf<class ATVRWeaponAttachment> GetCurrentAttachmentClass_Internal() const override;
 	virtual void GetAllowedAttachments(TArray<TSubclassOf<class ATVRWeaponAttachment>>& AllowedAttachments) const override;
 
 protected:

@@ -8,6 +8,16 @@
 #include "Engine/StaticMeshActor.h"
 #include "TVRWeaponAttachment.generated.h"
 
+UENUM(BlueprintType)
+enum class ERailType : uint8
+{
+	Picatinny,
+	MLok UMETA(DisplayName="M-LOK"),
+	Keymod,
+	Basis,
+	Custom
+};
+
 UCLASS()
 class TACTICALVRCORE_API ATVRWeaponAttachment : public AActor
 {
@@ -22,7 +32,6 @@ class TACTICALVRCORE_API ATVRWeaponAttachment : public AActor
 	
 public:
 	static FName StaticMeshComponentName;
-	static FName NAME_GripOverride;
 
 public:
 	// Sets default values for this actor's properties
@@ -30,10 +39,11 @@ public:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void FindAttachPointAndAttach();
 	
 	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
     virtual void AttachToWeapon(class UTVRAttachmentPoint* AttachPoint);
-
 
 	UFUNCTION(Category= "Weapon Attachment", BlueprintCallable)
     virtual class ATVRGunBase* GetGunOwner() const;
@@ -41,10 +51,7 @@ public:
 	class UStaticMeshComponent* GetStaticMeshComponent() const { return Mesh;}
 
 	virtual void SetCollisionProfile(FName NewProfile);
-
-	virtual FName GetGripSlotOverride() const {return GripSlotOverride;}
-	FName GripSlotOverride;
-
+	
 	virtual bool GetGripSlot(
 		const FVector& WorldLocation,
 		class UGripMotionControllerComponent* CallingController,
@@ -52,9 +59,34 @@ public:
 		FName& OutSlotName
 	) const {return false;}
 
+	virtual FName GetPrefixedSocketName(USceneComponent* SocketComp) const;
 
+	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
+	void SetVariant(uint8 Variant);
 	UFUNCTION(Category = "Weapon Attachment", BlueprintImplementableEvent)
-	void SetPreferredVariant(uint8 Variant);
+	void OnVariantChanged(uint8 Variant);
+
+	/**
+	 * Allows to pick another class to replace this attachment altogether for different rail types.
+	 * This can be useful in case for example the picatinny and mlok variant have differences are too
+	 * complex to handle in the OnRailTypeChanged function. It will be a class replacement, so stats would also
+	 * be changed. Good practice in order to retain the stats of the original is to make the replacement a child
+	 * @param RailType Type of rail usually of the attachment point
+	 * @param CustomType Additionl byte to implement Custom Types or other functionality.
+	 *
+	 * @returns A WeaponAttachment class that should replace this one under the given arguments.
+	 */
+	UFUNCTION(Category = "Weapon Attachment", BlueprintNativeEvent)
+	TSubclassOf<ATVRWeaponAttachment> GetReplacementClass(ERailType RailType, uint8 CustomType = 0) const;
+	virtual TSubclassOf<ATVRWeaponAttachment> GetReplacementClass_Implementation(ERailType RailType, uint8 CustomType = 0) const;
+	
+	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
+	void SetRailType(ERailType RailType, uint8 CustomType = 0);
+	UFUNCTION(Category = "Weapon Attachment", BlueprintImplementableEvent)
+	void OnRailTypeChanged(ERailType RailType, uint8 CustomType = 0);
+
+	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
+	const FText& GetWeaponAttachmentName() const {return WeaponAttachmentName;} 
 	
 protected:
 	TSubclassOf<UStaticMeshComponent> StaticMeshClass;
@@ -71,6 +103,15 @@ protected:
 protected:
 	UPROPERTY()
 	TArray<class UStaticMeshComponent*> AttachmentMeshes;
+
+	UPROPERTY()
+	class UTVRAttachmentPoint* AttachmentPoint;
+	
+	UPROPERTY(Category="Weapon Attachment", BlueprintReadOnly)
+	uint8 SelectedVariant;
+	
+	UPROPERTY(Category="Weapon Attachment", EditDefaultsOnly)
+	FText WeaponAttachmentName;
 	
 };
 

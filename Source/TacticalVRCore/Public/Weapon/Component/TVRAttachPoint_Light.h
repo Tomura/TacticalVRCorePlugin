@@ -16,7 +16,9 @@ public:
 	// Sets default values for this component's properties
 	UTVRAttachPoint_Light(const FObjectInitializer& OI);
 
-	virtual TSubclassOf<class ATVRWeaponAttachment> GetCurrentAttachmentClass() const override;
+	virtual bool SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass) override;
+
+	virtual TSubclassOf<class ATVRWeaponAttachment> GetCurrentAttachmentClass_Internal() const override;
 	virtual void GetAllowedAttachments(TArray<TSubclassOf<class ATVRWeaponAttachment>>& OutAllowedAttachments) const override;
 
 	virtual bool ToggleLight() override;

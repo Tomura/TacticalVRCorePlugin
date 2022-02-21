@@ -12,7 +12,29 @@ UTVRAttachPoint_Sight::UTVRAttachPoint_Sight(const FObjectInitializer& OI): Supe
 	CurrentSightClass = nullptr;
 }
 
-TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Sight::GetCurrentAttachmentClass() const
+bool UTVRAttachPoint_Sight::SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass)
+{
+	if(NewClass == nullptr)
+	{
+		CurrentSightClass = nullptr;
+		OnConstruction();
+		return true;
+	}
+	
+	if(NewClass->IsChildOf(AWPNA_Sight::StaticClass()))
+	{
+		const TSubclassOf<AWPNA_Sight> TestClass = *NewClass;
+		if(AllowedSights.Find(TestClass) != INDEX_NONE)
+		{
+			CurrentSightClass = TestClass;
+			OnConstruction();
+			return true;
+		}
+	}
+	return false;
+}
+
+TSubclassOf<ATVRWeaponAttachment> UTVRAttachPoint_Sight::GetCurrentAttachmentClass_Internal() const
 {
 	return CurrentSightClass;
 }

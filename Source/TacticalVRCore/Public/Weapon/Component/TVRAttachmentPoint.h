@@ -6,6 +6,7 @@
 #include "Components/ChildActorComponent.h"
 #include "TVRAttachmentPoint.generated.h"
 
+enum class ERailType: uint8;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponAttachmentAttachedDelegate, class UTVRAttachmentPoint*, AttachmentPoint, class ATVRWeaponAttachment*, NewWeaponAttachment);
 
@@ -24,16 +25,21 @@ public:
 	// virtual void CreateChildActor() override;
 
 	virtual void OnConstruction();
+	virtual void CreateChildActor() override;
 	
 	virtual void OnWeaponAttachmentAttached(class ATVRWeaponAttachment* NewAttachment);
 	// void AttachWeaponAttachment()
 
 	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)
-	virtual TSubclassOf<class ATVRWeaponAttachment> GetCurrentAttachmentClass() const {return nullptr;}
+	TSubclassOf<class ATVRWeaponAttachment> GetCurrentAttachmentClass() const;
+	
+	virtual TSubclassOf<class ATVRWeaponAttachment> GetCurrentAttachmentClass_Internal() const {return nullptr;}
 	
 	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)
 	virtual void GetAllowedAttachments(TArray<TSubclassOf<class ATVRWeaponAttachment>>& OutAllowedAttachments) const {}
 
+	virtual bool SetCurrentAttachmentClass(TSubclassOf<class ATVRWeaponAttachment> NewClass);
+	
 	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)
 	FORCEINLINE class ATVRWeaponAttachment* GetCurrentAttachment() const  {return CurrentAttachment;}
 
@@ -48,6 +54,11 @@ public:
 	
 	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
 	uint8 PreferredVariant;
+	
+	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
+	ERailType RailType;
+	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
+	uint8 CustomRailType;
 
 	UPROPERTY(Category = "WeaponAttachment", BlueprintAssignable)
 	FOnWeaponAttachmentAttachedDelegate EventOnWeaponAttachmentAttached;

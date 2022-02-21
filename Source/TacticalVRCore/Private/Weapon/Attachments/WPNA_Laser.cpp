@@ -28,6 +28,7 @@ AWPNA_Laser::AWPNA_Laser(const FObjectInitializer& OI) : Super(OI)
 	
 
 	LaserToggleSound = CreateDefaultSubobject<UAudioComponent>(FName("LaserToggleSound"));
+	LaserToggleSound->SetupAttachment(GetStaticMeshComponent());
 	LaserToggleSound->bAutoActivate = false;
 
 	PrimaryActorTick.bCanEverTick = true;
@@ -35,6 +36,10 @@ AWPNA_Laser::AWPNA_Laser(const FObjectInitializer& OI) : Super(OI)
 	Spread = 0.000015f;
 	BaseThickness = 0.002f;
 	bIsLaserOn = false;
+
+	LaserMaterialInstance = nullptr;
+	LaserOnMaterialParam = FName(TEXT("LaserOn"));
+	LaserMaterialSlot = 0;
 }
 
 void AWPNA_Laser::BeginPlay()
@@ -43,6 +48,12 @@ void AWPNA_Laser::BeginPlay()
 
 	HoverInputComponent->EventOnUsed.AddDynamic(this, &AWPNA_Laser::ToggleLaser);
 	HoverInputComponent->EventOnLaserPressed.AddDynamic(this, &AWPNA_Laser::ToggleLaser);
+
+	if(const auto TempMat = GetStaticMeshComponent()->GetMaterial(LaserMaterialSlot))
+	{
+		LaserMaterialInstance = GetStaticMeshComponent()->CreateDynamicMaterialInstance(LaserMaterialSlot);
+		LaserMaterialInstance->SetScalarParameterValue(LaserOnMaterialParam, IsLaserOn() ? 1.f : 0.f);
+	}
 }
 
 void AWPNA_Laser::Tick(float DeltaSeconds)
@@ -106,12 +117,20 @@ void AWPNA_Laser::ToggleLaser(UGripMotionControllerComponent* UsingHand)
 		LaserBeam->SetVisibility(false);
 		LaserImpactMesh->SetVisibility(false);
 		SetActorTickEnabled(false);
+		if(LaserMaterialInstance)
+		{
+			LaserMaterialInstance->SetScalarParameterValue(LaserOnMaterialParam, 0.f);
+		}
 	}
 	else
 	{
 		bIsLaserOn = true;
 		LaserBeam->SetVisibility(true);
 		LaserImpactMesh->SetVisibility(true);
-		SetActorTickEnabled(true);
+		SetActorTickEnabled(true);		
+		if(LaserMaterialInstance)
+		{
+			LaserMaterialInstance->SetScalarParameterValue(LaserOnMaterialParam, 1.f);
+		}
 	}
 }
