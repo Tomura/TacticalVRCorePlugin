@@ -25,7 +25,7 @@ public:
 	 * @param GameplayTag Specific Gameplay Tag to check for
 	 * @param DefaultTag Default Tag to check for
 	 */
-	UFUNCTION(Category = "Settings", BlueprintCallable, BlueprintPure)
+	UFUNCTION(Category = "Settings", BlueprintCallable, BlueprintPure, meta=(DeprecatedFunction))
 	static bool ValidateGameplayTag(
 	    class UObject* ObjectToCheck,
 	    const struct FGameplayTag& BaseTag,
@@ -34,7 +34,7 @@ public:
 	);
 
 
-	UFUNCTION(Category = "Settings", BlueprintCallable, BlueprintPure)
+	UFUNCTION(Category = "Settings", BlueprintCallable, BlueprintPure, meta=(DeprecatedFunction))
 	static bool ValidateGameplayTagContainer(
 		class UObject* ObjectToCheck,
 		const struct FGameplayTag& BaseTag,

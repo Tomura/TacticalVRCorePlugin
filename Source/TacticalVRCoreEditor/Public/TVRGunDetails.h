@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DetailCategoryBuilder.h"
 #include "IDetailCustomization.h"
 
 /**
@@ -27,4 +28,9 @@ public:
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override;
 
 	virtual int32 PopulateAttachmentsArrayFor(class UTVRAttachmentPoint* AttachPoint);
+
+	virtual class UTVRAttachmentPoint* GetAttachmentPointByName(AActor* Parent, FName AttachPointName) const;
+
+	virtual void AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, class ATVRGunBase* Gun);
+	virtual void AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, UTVRAttachmentPoint* ParentPoint, class ATVRGunBase* Gun);
 };

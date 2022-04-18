@@ -681,8 +681,8 @@ protected: // Properties
 	float SprintMaxAim;
 
 	
-	struct FHysteresisValue GrabHysteresisLeft;
-	struct FHysteresisValue GrabHysteresisRight;
+	struct FTVRHysteresisValue GrabHysteresisLeft;
+	struct FTVRHysteresisValue GrabHysteresisRight;
 	
 private:
 

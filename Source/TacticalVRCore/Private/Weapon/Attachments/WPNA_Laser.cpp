@@ -91,6 +91,7 @@ void AWPNA_Laser::Tick(float DeltaSeconds)
 				LaserImpactMesh->SetWorldScale3D(FVector(LightRadius));
 				LaserImpactMesh->SetWorldLocation(TraceResult.ImpactPoint);
 			}
+			PostLaserTrace(TraceResult);
 		}
 		if(!bSuccessfulHit)
 		{
@@ -121,6 +122,11 @@ void AWPNA_Laser::ToggleLaser(UGripMotionControllerComponent* UsingHand)
 		{
 			LaserMaterialInstance->SetScalarParameterValue(LaserOnMaterialParam, 0.f);
 		}
+		OnToggleLaser(false, UsingHand);
+		if(EventOnToggleLaser.IsBound())
+		{
+			EventOnToggleLaser.Broadcast(false, UsingHand);
+		}
 	}
 	else
 	{
@@ -131,6 +137,11 @@ void AWPNA_Laser::ToggleLaser(UGripMotionControllerComponent* UsingHand)
 		if(LaserMaterialInstance)
 		{
 			LaserMaterialInstance->SetScalarParameterValue(LaserOnMaterialParam, 1.f);
+		}		
+		OnToggleLaser(true, UsingHand);
+		if(EventOnToggleLaser.IsBound())
+		{
+			EventOnToggleLaser.Broadcast(true, UsingHand);
 		}
 	}
 }

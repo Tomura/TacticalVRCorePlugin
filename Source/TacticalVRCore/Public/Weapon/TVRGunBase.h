@@ -11,14 +11,14 @@
 
 
 UENUM(BlueprintType)
-enum class EGunType : uint8
+enum class ETVRGunType : uint8
 {
 	Primary,
 	Sidearm
 };
 
 UENUM(BlueprintType)
-enum class EGunClass : uint8
+enum class ETVRGunClass : uint8
 {
 	Pistol,
     Rifle
@@ -67,18 +67,6 @@ protected:
 	
 	/** Current Secondary Grip Info */
 	FBPActorGripInformation SecondaryGripInfo;
-	
-	UPROPERTY()
-	class UTVRAttachPoint_Underbarrel* AttachPoint_Underbarrel;
-	
-	UPROPERTY()
-	class UTVRAttachmentPoint* AttachPoint_Sight;
-	
-	UPROPERTY()
-	class UTVRAttachmentPoint* AttachPoint_Laser;
-	
-	UPROPERTY()
-	class UTVRAttachmentPoint* AttachPoint_Light;
 	
 	UPROPERTY()
 	TArray<class UStaticMeshComponent*> GunMeshes;
@@ -165,7 +153,7 @@ public:
 	
 	virtual void ClosestGripSlotInRange_Implementation(FVector WorldLocation, bool bSecondarySlot,  bool & bHadSlotInRange, FTransform & SlotWorldTransform, FName & SlotName, UGripMotionControllerComponent * CallingController = nullptr, FName OverridePrefix = NAME_None) override;
 
-	
+	virtual bool GetSecondarySlot(FVector WorldLocation, FTransform & OutTransform, FName & OutSlotName, UGripMotionControllerComponent * CallingController) const;
 	
 	virtual USceneComponent* GetPrimaryGripSlot() const {return GetPrimaryHandSocket();}
 
@@ -187,6 +175,7 @@ public:
 
 	UFUNCTION(Category = "Gun", BlueprintImplementableEvent, BlueprintCallable)
 	void FoldSights(bool bFold);
+	
 	UFUNCTION(Category = "Gun", BlueprintImplementableEvent)
 	void HideRearSight(bool bFold);
 	
@@ -252,13 +241,10 @@ public:
 	UFUNCTION()
 	virtual void OnCartridgeSpent();
 	
-	UFUNCTION(Category="Gun", BlueprintCallable, meta=(DeprecatedFunction))
-	virtual bool HasRoundInChamber() const;
-	
 	virtual bool CanStartFire() const;
 	
 	UFUNCTION(Category="Gun", BlueprintCallable)
-	EGunType GetGunType() const {return GunType;} 
+	ETVRGunType GetGunType() const {return GunType;} 
 
 	UFUNCTION(Category="Gun", BlueprintCallable)
 	USceneComponent* GetChargingHandleInterface() const;
@@ -369,7 +355,6 @@ public:
 	float GetBoltProgress() const {return BoltProgress;}
 	UFUNCTION(Category = "Gun", BlueprintCallable)
 	float GetHammerProgress() const {return HammerProgress;}
-
     
     UFUNCTION(Category= "Gun", BlueprintCallable)
     bool IsBoltReleasePressed() const {return bBoltReleasePressed;}
@@ -378,15 +363,35 @@ public:
 
     bool IsBoltLocked() const {return bIsBoltLocked;}
 
+	const TArray<UTVRAttachmentPoint*>& GetAttachmentPoints() const { return AttachmentPoints; }
+
+	template<class T> 
+	T* GetAttachmentPoint() const
+	{
+    	TArray<T*> AttachPoints;
+    	GetComponents<T>(AttachPoints);
+    	if(AttachPoints.Num() > 0)
+    	{
+    		return AttachPoints[0];
+    	}
+    	return nullptr;
+    }
+
+	template<class T> 
+	T* GetAttachment() const
+    {
+	    TArray<AActor*> ChildrenActors;
+    	GetAllChildActors(ChildrenActors);
+    	for(const auto TestChild: ChildrenActors)
+    	{
+    		if(auto AttachmentActor = Cast<T>(TestChild))
+    		{
+    			return AttachmentActor;
+    		}
+    	}
+    	return nullptr;
+    }
 	
-	UFUNCTION(Category = "Gun|Attachments", BlueprintCallable)
-	class UTVRAttachmentPoint* GetSightAttachmentPoint();
-	UFUNCTION(Category = "Gun|Attachments", BlueprintCallable)
-	class UTVRAttachmentPoint* GetLaserAttachmentPoint();
-	UFUNCTION(Category = "Gun|Attachments", BlueprintCallable)
-	class UTVRAttachmentPoint* GetLightAttachmentPoint();
-	UFUNCTION(Category = "Gun|Attachments", BlueprintCallable)
-    class UTVRAttachPoint_Underbarrel* GetAttachPoint_Underbarrel() const {return AttachPoint_Underbarrel;}
 
 	UFUNCTION(Category="Gun", BlueprintNativeEvent)
 	void ToggleLaser(UGripMotionControllerComponent* UsingHand);
@@ -402,15 +407,12 @@ public:
 	bool HasMagReleaseOnPrimaryGrip() const { return bHasMagReleaseOnPrimaryGrip;}
 	bool HasBoltReleaseOnPrimaryGrip() const { return bHasBoltReleaseNearPrimaryGrip;}
 
-
-
 	UFUNCTION(Category= "Gun", BlueprintNativeEvent)
 	bool GetPrimaryHandTransform(FTransform& OutTransform, EControllerHand HandType) const;
 	virtual bool GetPrimaryHandTransform_Implementation(FTransform& OutTransform, EControllerHand HandType) const {return false;}
 
 	UGripMotionControllerComponent* GetSecondaryController() const;
 	const FBPActorGripInformation* GetSecondaryGripInfo() const;
-
 	
 	/**
 	 * @returns the Primary hand socket of this gun
@@ -519,7 +521,7 @@ protected:
  
     /** Type of gun. Used mainly for sorting. */
 	UPROPERTY(Category = "Gun", EditDefaultsOnly)
-	EGunType GunType;
+	ETVRGunType GunType;
 	
     /** best used for pistols or other single hand weapons */
     UPROPERTY(Category = "Gun", EditDefaultsOnly)
@@ -578,3 +580,5 @@ protected:
 	UPROPERTY(Category = "Gun", EditDefaultsOnly)
 	FText DisplayName;
 };
+
+

@@ -49,7 +49,7 @@ public:
 	
 	virtual bool IsReciprocating_Implementation() const {return bIsReciprocating;}
 
-	virtual ELeftRight GetGrabLocation_Implementation() const override { return GrabLocation; }
+	virtual ETVRLeftRight GetGrabLocation_Implementation() const override { return GrabLocation; }
 
 	virtual void OnBoltClosed_Implementation() const override;
 	
@@ -84,7 +84,7 @@ protected:
 	bool bShouldPlayBackSound;
 	bool bShouldPlayCloseSound;
 
-	ELeftRight GrabLocation;
+	ETVRLeftRight GrabLocation;
 	
 	UPROPERTY()
 	class UAudioComponent* AudioComponent;

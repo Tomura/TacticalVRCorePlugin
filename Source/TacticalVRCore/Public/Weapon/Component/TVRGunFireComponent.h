@@ -8,7 +8,7 @@
 
 
 UENUM(BlueprintType)
-enum class EFireMode : uint8
+enum class ETVRFireMode : uint8
 {
 	Single,
 	Burst,
@@ -95,7 +95,6 @@ public:
 	UPROPERTY(Category="Events", BlueprintAssignable)
 	FFireOverrideEvent FireOverride;
 
-
 	virtual void SetSuppressed(bool NewValue);
 	virtual void ResetSuppressed();
 	
@@ -138,7 +137,7 @@ protected:
 	uint16 ShotCount;
 
 	/** The currently used fire mode. */
-	EFireMode CurrentFireMode;
+	ETVRFireMode CurrentFireMode;
 
 	/** Flag that controls whether this gun has single shot mode */
 	UPROPERTY(Category="Firing", EditDefaultsOnly)
@@ -323,13 +322,13 @@ public:
 	 * @returns the current fire mode
 	 */
 	UFUNCTION(Category="Firing", BlueprintCallable)
-	EFireMode GetCurrentFireMode() const {return CurrentFireMode;}
+	ETVRFireMode GetCurrentFireMode() const {return CurrentFireMode;}
 
 	/**
 	 * Gets the next firing mode based on the input
 	 * @param PrevFireMode the previous fire mode
 	 */
-	EFireMode GetNextFireMode(EFireMode PrevFireMode) const;
+	ETVRFireMode GetNextFireMode(ETVRFireMode PrevFireMode) const;
 
 	/**
 	 * Changes the firing mode, outside of the normal cycling logic. E.g. blueprint implementation of staged triggers
@@ -337,7 +336,7 @@ public:
 	 * @returns true if the component is now in the requested fire mode
 	 */
 	UFUNCTION(Category="Gun", BlueprintCallable)
-	bool SetFireMode(EFireMode NewFireMode);
+	bool SetFireMode(ETVRFireMode NewFireMode);
 
 	/**
 	 * Checks whether the component allows the given fire mode
@@ -345,7 +344,7 @@ public:
 	 * @returns true if the component allows the given fire mode
 	 */
 	UFUNCTION(Category="Gun", BlueprintCallable)
-	bool HasFiringMode(EFireMode CheckFireMode) const;
+	bool HasFiringMode(ETVRFireMode CheckFireMode) const;
 
 	/**
 	 * Cycles to the next fire mode. Will also call an event in case this happened correctly

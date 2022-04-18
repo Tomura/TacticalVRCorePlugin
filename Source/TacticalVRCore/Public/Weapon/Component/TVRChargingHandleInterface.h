@@ -56,8 +56,8 @@ public:
 
 	
 	UFUNCTION(Category="Charging Handle Interface", BlueprintCallable, BlueprintNativeEvent)
-	ELeftRight GetGrabLocation() const;
-	virtual ELeftRight GetGrabLocation_Implementation() const {return ELeftRight::None;}
+	ETVRLeftRight GetGrabLocation() const;
+	virtual ETVRLeftRight GetGrabLocation_Implementation() const {return ETVRLeftRight::None;}
 	
 	UFUNCTION(Category="Charging Handle Interface", BlueprintCallable, BlueprintNativeEvent)
 	void SetAudioComponent(UAudioComponent* NewComp);

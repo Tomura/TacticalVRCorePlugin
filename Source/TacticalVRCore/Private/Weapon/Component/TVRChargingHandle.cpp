@@ -33,7 +33,7 @@ UTVRChargingHandle::UTVRChargingHandle(const FObjectInitializer& OI) : Super(OI)
 	
 	bShouldPlayBackSound = false;
 	bShouldPlayCloseSound = false;
-	GrabLocation = ELeftRight::None;
+	GrabLocation = ETVRLeftRight::None;
 }
 
 void UTVRChargingHandle::BeginPlay()
@@ -95,7 +95,7 @@ void UTVRChargingHandle::OnGrip_Implementation(UGripMotionControllerComponent* G
 	InitialProgress = CurrentProgress;
 	InitialGripTransform = GetRelativeGripTransform(GrippingController);
 
-	GrabLocation = InitialGripTransform.GetLocation().Y > 0 ?  ELeftRight::Left : ELeftRight::Right;
+	GrabLocation = InitialGripTransform.GetLocation().Y > 0 ?  ETVRLeftRight::Left : ETVRLeftRight::Right;
 }
 
 void UTVRChargingHandle::OnGripRelease_Implementation(UGripMotionControllerComponent* ReleasingController,
@@ -103,7 +103,7 @@ void UTVRChargingHandle::OnGripRelease_Implementation(UGripMotionControllerCompo
 {
 	Super::OnGripRelease_Implementation(ReleasingController, GripInformation, bWasSocketed);
 	SetComponentTickEnabled(true);
-	GrabLocation = ELeftRight::None;
+	GrabLocation = ETVRLeftRight::None;
 }
 
 void UTVRChargingHandle::TickGrip_Implementation(UGripMotionControllerComponent* GrippingController,

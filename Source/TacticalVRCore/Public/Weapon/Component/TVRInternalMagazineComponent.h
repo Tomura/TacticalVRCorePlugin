@@ -24,6 +24,7 @@ class TACTICALVRCORE_API UTVRInternalMagazineComponent : public UTVRMagazineComp
 public:
 	UTVRInternalMagazineComponent(const FObjectInitializer& OI);
 
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 	// ================================================
 	// Start MagazineComponentInterface
@@ -59,10 +60,26 @@ public:
 	FORCEINLINE virtual bool IsFull() const;
 	
 protected:
+	
 	virtual void BeginPlay() override;
 
 	void BeginInsertCartridge(class ATVRCartridge* Cartridge);
 
+	void FullyInsertCartridge();
+
+	void SetCurrentInsertCartridge(ATVRCartridge* Cartridge);
+
+	virtual void AttachCartridge(ATVRCartridge* Cartridge);
+
+	float CartridgeSpeed = 0.f;
+	
+	UPROPERTY()
+	class ATVRCartridge* CurrentInsertingCartridge;
+
+	/** NOT YET IMPLEMENTED */
+	UPROPERTY(Category="Magazine", EditDefaultsOnly)
+	bool bUseComplexInsertion;
+	
 	UPROPERTY(Category="Magazine", EditDefaultsOnly)
 	USoundBase* AmmoInsertSound;
 	

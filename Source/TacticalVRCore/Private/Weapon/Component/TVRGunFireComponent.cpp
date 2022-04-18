@@ -14,6 +14,8 @@
 #include "Weapon/TVRGunBase.h"
 #include "Weapon/TVRGunWithChild.h"
 #include "Weapon/TVRCartridge.h"
+#include "Weapon/Attachments/TVRWeaponAttachment.h"
+#include "Weapon/Component/TVRAttachmentPoint.h"
 #include "Weapon/Component/TVRChargingHandleInterface.h"
 
 // Sets default values for this component's properties
@@ -41,7 +43,7 @@ UTVRGunFireComponent::UTVRGunFireComponent(const FObjectInitializer& OI) : Super
     bHasFireSelector = true;
 
 	LoadedCartridge = nullptr;
-	CurrentFireMode = EFireMode::Single;
+	CurrentFireMode = ETVRFireMode::Single;
 	bCartridgeIsSpent = false;
 	bUseForceTubeKick = false;
 
@@ -76,15 +78,15 @@ void UTVRGunFireComponent::BeginPlay()
 	// all weapons start out in single shot
 	if(bHasSingleShot)
 	{
-		CurrentFireMode = EFireMode::Single;
+		CurrentFireMode = ETVRFireMode::Single;
 	}
 	else if(bHasFullAuto)
 	{
-		CurrentFireMode = EFireMode::Automatic;
+		CurrentFireMode = ETVRFireMode::Automatic;
 	}
 	else
 	{
-		CurrentFireMode = EFireMode::Burst;
+		CurrentFireMode = ETVRFireMode::Burst;
 	}
 	
 	RefireTime = 60.f/RateOfFireRPM;
@@ -306,11 +308,11 @@ bool UTVRGunFireComponent::ShouldRefire() const
 	{
 		switch(GetCurrentFireMode())
 		{
-		case EFireMode::Single:
+		case ETVRFireMode::Single:
 			return ShotCount < 1;
-		case EFireMode::Burst:
+		case ETVRFireMode::Burst:
 			return ShotCount < BurstCount;
-		case EFireMode::Automatic:
+		case ETVRFireMode::Automatic:
 			return true;
 		}
 	}
@@ -431,7 +433,7 @@ void UTVRGunFireComponent::LocalSimulateFire()
 			{
 				if(bUseForceTubeKick)
 				{
-					const uint8 KickPower = GetCurrentFireMode() == EFireMode::Single ? 255 : UForceTubeVRFunctions::TempoToKickPower(GetRefireTime());
+					const uint8 KickPower = GetCurrentFireMode() == ETVRFireMode::Single ? 255 : UForceTubeVRFunctions::TempoToKickPower(GetRefireTime());
 					OwnerPC->ClientForceTubeKick(KickPower, ForceTubeVRChannel::rifle);
 				}
 				//
@@ -559,6 +561,26 @@ void UTVRGunFireComponent::ProcessHits(TArray<FHitResult>& Hits, TSubclassOf<ATV
 	{		
 		FHitResult& LastHit = Hits.Last();
 		SimulateHit(LastHit, Cartridge);
+		if(const auto HitActor = LastHit.GetActor())
+		{
+			const auto CartridgeCDO = Cartridge->GetDefaultObject<ATVRCartridge>();
+			float Damage = CartridgeCDO->GetBaseDamage();
+			if(GetOwner())
+			{
+				if(const auto GunOwner = Cast<ATVRGunBase>(GetOwner()))
+				{
+					for(const auto AttachPoint: GunOwner->GetAttachmentPoints())
+					{
+						if(const auto WPNA = AttachPoint->GetCurrentAttachment())
+						{
+							Damage *= WPNA->GetDamageModifier();
+						}
+					}
+				}
+			}
+			const FVector TraceDir = (LastHit.ImpactPoint - LastHit.TraceStart).GetSafeNormal();
+			UGameplayStatics::ApplyPointDamage(HitActor, Damage, TraceDir, LastHit, nullptr, GetOwner(), CartridgeCDO->GetDamageType());
+		}
 	}
 }
 
@@ -637,7 +659,7 @@ void UTVRGunFireComponent::LocalSimulateHit(const FHitResult& Hit, TSubclassOf<A
 	{
 		FRotator DecalRot = UKismetMathLibrary::MakeRotFromX(-Hit.ImpactNormal);
 		DecalRot.Roll = FMath::RandRange(-180.f, 180.f);
-		auto NewDecal = UGameplayStatics::SpawnDecalAttached(
+		const auto NewDecal = UGameplayStatics::SpawnDecalAttached(
 			ImpactDecal->DecalMaterial,
 			ImpactDecal->ScaleFactor * FVector(0.5f, 1.f, 1.f),
 			Hit.GetComponent(), Hit.BoneName,
@@ -695,21 +717,21 @@ void UTVRGunFireComponent::SpawnImpactSound(const FHitResult& Hit, USoundBase* S
 	}
 }
 
-EFireMode UTVRGunFireComponent::GetNextFireMode(EFireMode PrevFireMode) const
+ETVRFireMode UTVRGunFireComponent::GetNextFireMode(ETVRFireMode PrevFireMode) const
 {
 	switch (PrevFireMode)
 	{
-	case EFireMode::Single:
-		return EFireMode::Burst;
-	case EFireMode::Burst:
-		return EFireMode::Automatic;
-	case EFireMode::Automatic:
-		return EFireMode::Single;            
+	case ETVRFireMode::Single:
+		return ETVRFireMode::Burst;
+	case ETVRFireMode::Burst:
+		return ETVRFireMode::Automatic;
+	case ETVRFireMode::Automatic:
+		return ETVRFireMode::Single;            
 	}
 	return PrevFireMode;
 }
 
-bool UTVRGunFireComponent::SetFireMode(EFireMode NewFireMode)
+bool UTVRGunFireComponent::SetFireMode(ETVRFireMode NewFireMode)
 {
 	if(HasFiringMode(NewFireMode))
 	{
@@ -719,15 +741,15 @@ bool UTVRGunFireComponent::SetFireMode(EFireMode NewFireMode)
 	return false;
 }
 
-bool UTVRGunFireComponent::HasFiringMode(EFireMode CheckFireMode) const
+bool UTVRGunFireComponent::HasFiringMode(ETVRFireMode CheckFireMode) const
 {
 	switch (CheckFireMode)
 	{
-	case EFireMode::Single:
+	case ETVRFireMode::Single:
 		return bHasSingleShot;
-	case EFireMode::Burst:
+	case ETVRFireMode::Burst:
 		return bHasBurst;
-	case EFireMode::Automatic:
+	case ETVRFireMode::Automatic:
 		return bHasFullAuto;            
 	}
 	return false;

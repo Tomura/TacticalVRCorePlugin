@@ -83,6 +83,10 @@ public:
 	UPROPERTY(Category = "Guns", BlueprintReadWrite, EditAnywhere, Config)
 	float VirtualStockStrength;
 
+	/** Distance of Secondary Grip Location from Primary Grip Location. X - Forward (Barrel), Y - Right, Z - Up */
+	UPROPERTY(Category = "Guns", BlueprintReadWrite, EditAnywhere, Config)
+	FVector PhysicalStockSecondaryOffset;
+
 	UFUNCTION(Category = "Settings", BlueprintCallable, BlueprintPure, meta=(DisplayName="Get Tactical VR Core Gameplay Settings"))
 	static UTVRCoreGameplaySettings* Get();
 

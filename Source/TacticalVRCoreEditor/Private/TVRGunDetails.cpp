@@ -23,7 +23,7 @@ FTVRGunDetails::FTVRGunDetails()
 void FTVRGunDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
 	IDetailCategoryBuilder& Cat = DetailBuilder.EditCategory(TEXT("Weapon Attachments"));
-	
+
 	TArray< TWeakObjectPtr< UObject > > Objects;
 	DetailBuilder.GetObjectsBeingCustomized(Objects);
 	if(Objects.Num() != 1)
@@ -43,108 +43,29 @@ void FTVRGunDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 
 	AttachmentsArray.Empty();
 	
-	for(auto AttachPoint : AttachPoints)
+	for(const auto AttachPoint : AttachPoints)
 	{
 		if(AttachPoint)
 		{
-			const int32 i = PopulateAttachmentsArrayFor(AttachPoint);
-			
-			FSimpleDelegate BrowseDelegate;
-			BrowseDelegate.BindLambda(
-				[AttachPoint]()
+			AddAttachmentRow(Cat, AttachPoint, MyGun.Get());
+			// we'll look for child attachments.
+			// This is limited to a depth of one. everything else is probably unreasonable and in that case it might be
+			// better to actually solve that in-game.
+			const auto ChildAttachment = AttachPoint->GetCurrentAttachment();
+			if(ChildAttachment)
+			{
+				TArray<UTVRAttachmentPoint*> SubAttachPoints;
+				ChildAttachment->GetComponents<UTVRAttachmentPoint>(SubAttachPoints);
+				for(const auto LoopSubAttachPoint: SubAttachPoints)
 				{
-					FAssetData AssetData = FAssetData(AttachPoint->GetCurrentAttachmentClass());
-					const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-					TArray<FAssetData> AssetList;
-					AssetList.Add(AssetData);
-					ContentBrowserModule.Get().SyncBrowserToAssets(AssetList);
+					if(LoopSubAttachPoint)
+					{
+						AddSubAttachmentRow(Cat, LoopSubAttachPoint, AttachPoint, MyGun.Get());
+					}
 				}
-			);
-
-			FSimpleDelegate ClearDelegate;
-			ClearDelegate.BindLambda(
-				[AttachPoint]()
-				{
-					AttachPoint->SetCurrentAttachmentClass(nullptr);
-				}
-			);
-			
-			Cat.AddCustomRow(FText::FromString(AttachPoint->GetName()))
-			.NameContent()
-			[
-				SNew(STextBlock)
-				.Text(FText::FromString(AttachPoint->GetName().Append(FString::FromInt(i))))
-				.TextStyle(FEditorStyle::Get(), "SmallText")
-			]			
-			.ValueContent()
-			.MaxDesiredWidth(800.f)
-			.MinDesiredWidth(400.f)
-			[
-				SNew(SHorizontalBox)
-				+SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SComboBox<AttachmentClassPtr>)
-					.OptionsSource(
-						AttachmentsArray[i].Get()
-					)
-					.OnGenerateWidget_Lambda(
-						[](AttachmentClassPtr AttachmentClass)
-						{
-							FText DisplayName;
-							if(AttachmentClass.IsValid())
-							{
-								const auto MyAttach = AttachmentClass.Get();
-								const auto ClassAsset = FAssetData(*MyAttach);
-								DisplayName = FText::FromName(ClassAsset.AssetName);
-							}
-							else
-							{
-								DisplayName = NSLOCTEXT(LOCTEXT_NAMESPACE,"Invalid Pointer","Invalid Pointer");
-							}
-							return SNew(STextBlock)
-								.TextStyle(FEditorStyle::Get(), "NormalText")
-								.Margin(2.f)
-								.Text(DisplayName);
-						}
-					)
-					.OnSelectionChanged_Lambda(
-						[AttachPoint](AttachmentClassPtr NewValue, ESelectInfo::Type SelectType)
-						{
-							AttachPoint->SetCurrentAttachmentClass(*NewValue);
-						}
-					)
-					[
-						SNew(STextBlock)
-						.TextStyle(FEditorStyle::Get(), "SmallText")
-						.Text_Lambda(
-							[AttachPoint]()
-							{
-								FText DisplayText;
-								const auto CurrentAttachment = AttachPoint->GetCurrentAttachmentClass();
-								const auto ClassAsset = FAssetData(CurrentAttachment);
-								return FText::FromName(ClassAsset.AssetName);
-							}
-						)
-					]
-				]
-				+SHorizontalBox::Slot()
-				.MaxWidth(20.f)
-				.Padding(2.f)
-				[
-					PropertyCustomizationHelpers::MakeBrowseButton(BrowseDelegate)
-				]
-				+SHorizontalBox::Slot()
-				.MaxWidth(20.f)
-				.Padding(2.f)
-				[
-					PropertyCustomizationHelpers::MakeClearButton(ClearDelegate)
-				]
-			];
+			}
 		}
 	}
-
-	UE_LOG(LogTemp, Log, TEXT("Finished GunDetails"));
 }
 
 int32 FTVRGunDetails::PopulateAttachmentsArrayFor(UTVRAttachmentPoint* AttachPoint)
@@ -161,4 +82,249 @@ int32 FTVRGunDetails::PopulateAttachmentsArrayFor(UTVRAttachmentPoint* AttachPoi
 	}
 	const int32 i = AttachmentsArray.Add(SharedTempArray);
 	return i;
+}
+
+UTVRAttachmentPoint* FTVRGunDetails::GetAttachmentPointByName(AActor* Parent, FName AttachPointName) const
+{	
+	TArray<UTVRAttachmentPoint*> AllAttachPoints;
+	Parent->GetComponents<UTVRAttachmentPoint>(AllAttachPoints);
+	for(const auto& TestPoint: AllAttachPoints)
+	{
+		if(TestPoint->GetFName() == AttachPointName)
+		{
+			return TestPoint;
+		}
+	}
+	return nullptr;
+}
+
+void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, ATVRGunBase* Gun)
+{
+	const auto AttachPointName = AttachPoint->GetFName();
+	const int32 i = PopulateAttachmentsArrayFor(AttachPoint);
+	
+	FSimpleDelegate BrowseDelegate;
+	BrowseDelegate.BindLambda(
+		[this, Gun, AttachPointName]()
+		{
+			const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
+			FAssetData AssetData = FAssetData(AttachPoint->GetCurrentAttachmentClass());
+			const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+			TArray<FAssetData> AssetList;
+			AssetList.Add(AssetData);
+			ContentBrowserModule.Get().SyncBrowserToAssets(AssetList);
+		}
+	);
+
+	FSimpleDelegate ClearDelegate;
+	ClearDelegate.BindLambda(
+		[this, Gun, AttachPointName]()
+		{
+			const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
+			AttachPoint->SetCurrentAttachmentClass(nullptr);				
+			FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+			PropertyEditorModule.NotifyCustomizationModuleChanged();
+		}
+	);
+	Cat.AddCustomRow(FText::FromString(AttachPoint->GetName()))
+	.NameContent()
+	[
+		SNew(STextBlock)
+		.Text(FText::FromString(AttachPoint->GetName()))
+		.TextStyle(FEditorStyle::Get(), "SmallText")
+	]			
+	.ValueContent()
+	.MaxDesiredWidth(800.f)
+	.MinDesiredWidth(400.f)
+	[
+		SNew(SHorizontalBox)
+		+SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(SComboBox<AttachmentClassPtr>)
+			.OptionsSource(
+				AttachmentsArray[i].Get()
+			)
+			.OnGenerateWidget_Lambda(
+				[](AttachmentClassPtr AttachmentClass)
+				{
+					FText DisplayName;
+					if(AttachmentClass.IsValid())
+					{
+						const auto MyAttach = AttachmentClass.Get();
+						const auto ClassAsset = FAssetData(*MyAttach);
+						DisplayName = FText::FromName(ClassAsset.AssetName);
+					}
+					else
+					{
+						DisplayName = NSLOCTEXT(LOCTEXT_NAMESPACE,"Invalid Pointer","Invalid Pointer");
+					}
+					return SNew(STextBlock)
+						.TextStyle(FEditorStyle::Get(), "NormalText")
+						.Margin(2.f)
+						.Text(DisplayName);
+				}
+			)
+			.OnSelectionChanged_Lambda(
+				[this, Gun, AttachPointName](AttachmentClassPtr NewValue, ESelectInfo::Type SelectType)
+				{
+					const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
+					AttachPoint->SetCurrentAttachmentClass(*NewValue);
+					// DetailBuilder.ForceRefreshDetails();
+					FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+					PropertyEditorModule.NotifyCustomizationModuleChanged();
+				}
+			)
+			[
+				SNew(STextBlock)
+				.TextStyle(FEditorStyle::Get(), "SmallText")
+				.Text_Lambda(
+					[this, Gun, AttachPointName]()
+					{
+						const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
+						const auto CurrentAttachment = AttachPoint->GetCurrentAttachmentClass();
+						const auto ClassAsset = FAssetData(CurrentAttachment);
+						return FText::FromName(ClassAsset.AssetName);
+					}
+				)
+			]
+		]
+		+SHorizontalBox::Slot()
+		.MaxWidth(20.f)
+		.Padding(2.f)
+		[
+			PropertyCustomizationHelpers::MakeBrowseButton(BrowseDelegate)
+		]
+		+SHorizontalBox::Slot()
+		.MaxWidth(20.f)
+		.Padding(2.f)
+		[
+			PropertyCustomizationHelpers::MakeClearButton(ClearDelegate)
+		]
+	];
+}
+
+void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint,
+	UTVRAttachmentPoint* ParentPoint, ATVRGunBase* Gun)
+{
+	const auto AttachPointName = AttachPoint->GetFName();
+	const auto ParentPointName = ParentPoint->GetFName();
+	const int32 i = PopulateAttachmentsArrayFor(AttachPoint);
+	
+	FSimpleDelegate BrowseDelegate;
+	BrowseDelegate.BindLambda(
+		[this, Gun, ParentPointName, AttachPointName]()
+		{
+			const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
+			if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+			{				
+				const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName);
+				FAssetData AssetData = FAssetData(AttachPoint->GetCurrentAttachmentClass());
+				const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+				TArray<FAssetData> AssetList;
+				AssetList.Add(AssetData);
+				ContentBrowserModule.Get().SyncBrowserToAssets(AssetList);
+			}
+		}
+	);
+
+	FSimpleDelegate ClearDelegate;
+	ClearDelegate.BindLambda(
+		[this, Gun, ParentPointName, AttachPointName]()
+		{
+			const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
+			if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+			{
+				const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName);
+				AttachPoint->SetCurrentAttachmentClass(nullptr);				
+				FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+				PropertyEditorModule.NotifyCustomizationModuleChanged();
+			}
+		}
+	);
+	Cat.AddCustomRow(FText::FromString(AttachPoint->GetName()))
+	.NameContent()
+	[
+		SNew(STextBlock)
+		.Text(FText::FromString(FString(TEXT("-- ")).Append(AttachPoint->GetName())))
+		.TextStyle(FEditorStyle::Get(), "SmallText")
+	]			
+	.ValueContent()
+	.MaxDesiredWidth(800.f)
+	.MinDesiredWidth(400.f)
+	[
+		SNew(SHorizontalBox)
+		+SHorizontalBox::Slot()
+		.AutoWidth()
+		[
+			SNew(SComboBox<AttachmentClassPtr>)
+			.OptionsSource(
+				AttachmentsArray[i].Get()
+			)
+			.OnGenerateWidget_Lambda(
+				[](AttachmentClassPtr AttachmentClass)
+				{
+					FText DisplayName;
+					if(AttachmentClass.IsValid())
+					{
+						const auto MyAttach = AttachmentClass.Get();
+						const auto ClassAsset = FAssetData(*MyAttach);
+						DisplayName = FText::FromName(ClassAsset.AssetName);
+					}
+					else
+					{
+						DisplayName = NSLOCTEXT(LOCTEXT_NAMESPACE,"Invalid Pointer","Invalid Pointer");
+					}
+					return SNew(STextBlock)
+						.TextStyle(FEditorStyle::Get(), "NormalText")
+						.Margin(2.f)
+						.Text(DisplayName);
+				}
+			)
+			.OnSelectionChanged_Lambda(
+				[this, Gun, AttachPointName, ParentPointName](AttachmentClassPtr NewValue, ESelectInfo::Type SelectType)
+				{
+					const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
+					if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+					{
+						const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName);
+						AttachPoint->SetCurrentAttachmentClass(*NewValue);
+						// DetailBuilder.ForceRefreshDetails();
+						FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+						PropertyEditorModule.NotifyCustomizationModuleChanged();
+					}
+				}
+			)
+			[
+				SNew(STextBlock)
+				.TextStyle(FEditorStyle::Get(), "SmallText")
+				.Text_Lambda(
+					[this, Gun, AttachPointName, ParentPointName]()
+					{
+						const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
+						if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+						{
+							const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName);
+							const auto CurrentAttachment = AttachPoint->GetCurrentAttachmentClass();
+							const auto ClassAsset = FAssetData(CurrentAttachment);
+							return FText::FromName(ClassAsset.AssetName);
+						}
+						return FText::FromString(FString("INVALID"));
+					}
+				)
+			]
+		]
+		+SHorizontalBox::Slot()
+		.MaxWidth(20.f)
+		.Padding(2.f)
+		[
+			PropertyCustomizationHelpers::MakeBrowseButton(BrowseDelegate)
+		]
+		+SHorizontalBox::Slot()
+		.MaxWidth(20.f)
+		.Padding(2.f)
+		[
+			PropertyCustomizationHelpers::MakeClearButton(ClearDelegate)
+		]
+	];
 }

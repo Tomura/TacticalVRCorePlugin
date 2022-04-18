@@ -40,7 +40,7 @@ public:
 	virtual bool IsLocked_Implementation() const { return bIsLocked; }
 	virtual bool IsInUse_Implementation() const override { return bIsInUse; }
 	
-	virtual ELeftRight GetGrabLocation_Implementation() const {return ELeftRight::None;}
+	virtual ETVRLeftRight GetGrabLocation_Implementation() const {return ETVRLeftRight::None;}
 	virtual void SetAudioComponent_Implementation(UAudioComponent* NewComp) {AudioComponent = NewComp;}
 	
 	virtual void SetStiffness_Implementation(float NewStiffness) { PumpStiffness = NewStiffness; }

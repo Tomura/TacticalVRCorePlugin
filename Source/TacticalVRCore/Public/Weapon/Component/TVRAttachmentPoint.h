@@ -41,7 +41,7 @@ public:
 	virtual bool SetCurrentAttachmentClass(TSubclassOf<class ATVRWeaponAttachment> NewClass);
 	
 	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)
-	FORCEINLINE class ATVRWeaponAttachment* GetCurrentAttachment() const  {return CurrentAttachment;}
+	FORCEINLINE class ATVRWeaponAttachment* GetCurrentAttachment() const;
 
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
@@ -69,5 +69,5 @@ public:
 
 protected:
 	UPROPERTY()
-	class ATVRWeaponAttachment* CurrentAttachment;
+	class ATVRWeaponAttachment* CachedCurrentAttachment;
 };

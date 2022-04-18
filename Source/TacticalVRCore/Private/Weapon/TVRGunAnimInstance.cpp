@@ -16,7 +16,7 @@ UTVRGunAnimInstance::UTVRGunAnimInstance(const FObjectInitializer& OI) : Super(O
     bBoltReleasePressed = false;
     bMagazineReleasePressed = false;
 
-	FiringMode = EFireMode::Single;
+	FiringMode = ETVRFireMode::Single;
 	SelectorValue = 0.f;
 	bSelectorInitialized= false;
 	ChargingHandleStroke = 10.f;
@@ -83,11 +83,11 @@ float UTVRGunAnimInstance::GetSelectorTargetValue() const
 {
 	switch(FiringMode)
 	{
-		case EFireMode::Automatic:
+		case ETVRFireMode::Automatic:
 			return SelectorValueAuto;
-		case EFireMode::Burst:
+		case ETVRFireMode::Burst:
 			return SelectorValueBurst;
-		case EFireMode::Single:
+		case ETVRFireMode::Single:
 			return SelectorValueSingle;
 	}
 	return 0.f;

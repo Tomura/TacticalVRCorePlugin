@@ -37,6 +37,8 @@ public:
 	// Sets default values for this actor's properties
 	ATVRWeaponAttachment(const FObjectInitializer& OI);
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -63,9 +65,14 @@ public:
 
 	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
 	void SetVariant(uint8 Variant);
+	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
+	void SetColorVariant(uint8 Variant);
+	
 	UFUNCTION(Category = "Weapon Attachment", BlueprintImplementableEvent)
-	void OnVariantChanged(uint8 Variant);
+	void OnVariantChanged(uint8 Variant, uint8 ColorVariant);
 
+	
+	
 	/**
 	 * Allows to pick another class to replace this attachment altogether for different rail types.
 	 * This can be useful in case for example the picatinny and mlok variant have differences are too
@@ -86,7 +93,37 @@ public:
 	void OnRailTypeChanged(ERailType RailType, uint8 CustomType = 0);
 
 	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
-	const FText& GetWeaponAttachmentName() const {return WeaponAttachmentName;} 
+	const FText& GetWeaponAttachmentName() const {return WeaponAttachmentName;}
+
+	
+	UFUNCTION(Category= "Weapon Attachment", BlueprintCallable, BlueprintNativeEvent)
+	float GetRecoilModifier() const;
+	virtual float GetRecoilModifier_Implementation() const {return 1.f;}
+	
+	UFUNCTION(Category= "Weapon Attachment", BlueprintCallable, BlueprintNativeEvent)
+	float GetSprayModifier() const;
+	virtual float GetSprayModifier_Implementation() const {return 1.f;}
+	
+	UFUNCTION(Category= "Weapon Attachment", BlueprintCallable, BlueprintNativeEvent)
+	float GetDamageModifier() const;
+	virtual float GetDamageModifier_Implementation() const {return 1.f;}
+	
+	UFUNCTION(Category= "Weapon Attachment", BlueprintCallable, BlueprintNativeEvent)
+	float GetMuzzleVelocityModifier() const;
+	virtual float GetMuzzleVelocityModifier_Implementation() const {return 1.f;}
+	
+	template<class T> 
+	T* GetAttachmentPoint() const
+	{
+		TArray<T*> AttachPoints;
+		GetComponents<T>(AttachPoints);
+		if(AttachPoints.Num() > 0)
+		{
+			return AttachPoints[0];
+		}
+		return nullptr;
+	}
+	
 	
 protected:
 	TSubclassOf<UStaticMeshComponent> StaticMeshClass;
@@ -109,6 +146,8 @@ protected:
 	
 	UPROPERTY(Category="Weapon Attachment", BlueprintReadOnly)
 	uint8 SelectedVariant;
+	UPROPERTY(Category="Weapon Attachment", BlueprintReadOnly)
+	uint8 SelectedColor;
 	
 	UPROPERTY(Category="Weapon Attachment", EditDefaultsOnly)
 	FText WeaponAttachmentName;

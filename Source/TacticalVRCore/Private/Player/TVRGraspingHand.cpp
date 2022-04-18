@@ -10,9 +10,9 @@
 #include "Misc/VREPhysicalAnimationComponent.h"
 // #include "SteamVRInputDeviceFunctionLibrary.h"
 #include "OpenXRHandPoseComponent.h"
-#include "Weapon/Component/TVRAttachPoint_Underbarrel.h"
 #include "Grippables/HandSocketComponent.h"
 #include "Weapon/Attachments/TVRWeaponAttachment.h"
+#include "Weapon/Attachments/WPNA_Foregrip.h"
 
 ATVRGraspingHand::ATVRGraspingHand(const FObjectInitializer& OI) : Super(OI)
 {
@@ -376,22 +376,18 @@ void ATVRGraspingHand::EvaluateGrasping()
 						bInitialOverlap = It.Value()->IsOverlappingActor(GrippedActor);
 						if(!bInitialOverlap)
 						{
-							if(ATVRGunBase* Gun = Cast<ATVRGunBase>(GrippedActor))
+							if(const auto TestGun = Cast<ATVRGunBase>(GrippedActor))
 							{							
-								if(UTVRAttachPoint_Underbarrel* TestPoint = Gun->GetAttachPoint_Underbarrel())
-								{
-									if(ATVRWeaponAttachment* TestAttachment = TestPoint->GetCurrentAttachment())
-									{										
-										bInitialOverlap = It.Value()->IsOverlappingActor(TestAttachment);
-									}
+								if(const auto TestForeGrip = TestGun->GetAttachment<AWPNA_ForeGrip>())
+								{									
+									bInitialOverlap = It.Value()->IsOverlappingActor(TestForeGrip);
 								}
 							}
 						}
 					}
 					else // EGripTargetType::ComponentGrip
 					{
-						
-						UPrimitiveComponent* GrippedComp = Cast<UPrimitiveComponent>(GripInfo.GrippedObject);
+						const auto GrippedComp = Cast<UPrimitiveComponent>(GripInfo.GrippedObject);
 						bInitialOverlap = It.Value()->IsOverlappingComponent(GrippedComp);
 					}
 					if(bInitialOverlap)

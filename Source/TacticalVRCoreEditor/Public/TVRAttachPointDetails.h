@@ -19,6 +19,7 @@
 #include "Weapon/Attachments/WPNA_Laser.h"
 #include "Weapon/Attachments/WPNA_Sight.h"
 #include "Weapon/Attachments/WPNA_Stock.h"
+#include "Weapon/Attachments/WPNA_Barrel.h"
 
 #include "Weapon/Component/TVRAttachPoint_Laser.h"
 #include "Weapon/Component/TVRAttachPoint_Light.h"
@@ -27,6 +28,7 @@
 #include "Weapon/Component/TVRAttachPoint_Sight.h"
 #include "Weapon/Component/TVRAttachPoint_Stock.h"
 #include "Weapon/Component/TVRAttachPoint_Underbarrel.h"
+#include "Weapon/Component/TVRAttachPoint_Barrel.h"
 
 
 #define LOCTEXT_NAMESPACE "TVRAttachPointDetails"
@@ -298,5 +300,19 @@ public:
 	static TSharedRef<IDetailCustomization> MakeInstance()
 	{
 		return MakeShareable(new FTVRAttachPointStockDetails());
+	}
+};
+
+class FTVRAttachPointBarrelDetails : public FTVRAttachPointDetails<UTVRAttachPoint_Barrel, AWPNA_Barrel>
+{
+public:
+	FTVRAttachPointBarrelDetails() : FTVRAttachPointDetails<UTVRAttachPoint_Barrel, AWPNA_Barrel>(FString("CurrentAttachmentClass"))
+	{
+	}
+	
+	/** Makes a new instance of this detail layout class for a specific detail view requesting it */
+	static TSharedRef<IDetailCustomization> MakeInstance()
+	{
+		return MakeShareable(new FTVRAttachPointBarrelDetails());
 	}
 };

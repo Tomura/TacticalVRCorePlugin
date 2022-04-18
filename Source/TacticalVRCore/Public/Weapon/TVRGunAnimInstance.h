@@ -6,8 +6,8 @@
 #include "Animation/AnimInstance.h"
 #include "TVRGunAnimInstance.generated.h"
 
-enum class EFireMode : uint8;
-enum class ELeftRight : uint8;
+enum class ETVRFireMode : uint8;
+enum class ETVRLeftRight : uint8;
 
 /**
  * 
@@ -38,7 +38,7 @@ public:
 	UPROPERTY(Category = "Gun", BlueprintReadWrite, EditAnywhere)
 	float ChargingHandleDistance;
     UPROPERTY(Category = "Gun", BlueprintReadWrite, EditAnywhere)
-    EFireMode FiringMode;
+    ETVRFireMode FiringMode;
     UPROPERTY(Category = "Gun", BlueprintReadWrite, EditAnywhere)
     float Trigger;
     UPROPERTY(Category = "Gun", BlueprintReadWrite, EditAnywhere)
@@ -78,5 +78,5 @@ public:
 	bool bOpenDustCover;
 	
 	UPROPERTY(Category = "Gun", BlueprintReadOnly, EditDefaultsOnly)
-	ELeftRight ChargingHandleGrabType;
+	ETVRLeftRight ChargingHandleGrabType;
 };

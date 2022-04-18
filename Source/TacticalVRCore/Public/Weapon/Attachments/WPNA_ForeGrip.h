@@ -39,7 +39,12 @@ public:
 
 	virtual class UHandSocketComponent* GetHandSocket_Implementation(FName SlotName) const override;
 
+	virtual float GetRecoilModifier_Implementation() const override;
+	
 protected:
 	UPROPERTY(Category="Foregrip", EditDefaultsOnly)
 	float PrimarySlotGripDistance;
+	
+	UPROPERTY(Category="Foregrip", EditDefaultsOnly)
+	float RecoilModifier;
 };

@@ -4,16 +4,16 @@
 #include "CoreMinimal.h"
 
 UENUM(BlueprintType)
-enum class ELeftRight : uint8
+enum class ETVRLeftRight : uint8
 {
 	None,
 	Left,
 	Right
 };
 
-struct FHysteresisValue
+struct FTVRHysteresisValue
 {
-	FHysteresisValue(const float Min = 0.5f, const float Max = 0.5f)
+	FTVRHysteresisValue(const float Min = 0.5f, const float Max = 0.5f)
 	{
 		ThresholdMin = Min;
 		ThresholdMax = Max;

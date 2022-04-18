@@ -18,16 +18,7 @@ void AWPNA_Muzzle::AttachToWeapon(UTVRAttachmentPoint* AttachPoint)
 {
 	Super::AttachToWeapon(AttachPoint);
 	
-	if(GetGunOwner())
-	{
-		GetGunOwner()->GetFiringComponent()->SetSuppressed(bIsSuppressor);
-		GetGunOwner()->GetFiringComponent()->SetWorldTransform(MuzzleLocation->GetComponentTransform(), false);
-		const auto MuzzlePSC = FindComponentByClass<UParticleSystemComponent>();
-		if(MuzzlePSC)
-		{
-			GetGunOwner()->GetFiringComponent()->MuzzleFlashOverride = MuzzlePSC;			
-		}
-	}
+	ModifyMuzzleLocation();
 }
 
 void AWPNA_Muzzle::BeginPlay()
@@ -49,4 +40,18 @@ void AWPNA_Muzzle::Destroyed()
 		}
 	}
 	Super::Destroyed();
+}
+
+void AWPNA_Muzzle::ModifyMuzzleLocation()
+{
+	if(GetGunOwner())
+	{
+		GetGunOwner()->GetFiringComponent()->SetSuppressed(bIsSuppressor);
+		GetGunOwner()->GetFiringComponent()->SetWorldTransform(MuzzleLocation->GetComponentTransform(), false);
+		const auto MuzzlePSC = FindComponentByClass<UParticleSystemComponent>();
+		if(MuzzlePSC)
+		{
+			GetGunOwner()->GetFiringComponent()->MuzzleFlashOverride = MuzzlePSC;			
+		}
+	}
 }

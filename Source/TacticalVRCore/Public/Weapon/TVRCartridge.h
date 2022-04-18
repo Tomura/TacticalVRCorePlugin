@@ -96,8 +96,9 @@ public:
 	const FImpactParticleData* GetImpactParticle(EPhysicalSurface SurfaceType) const;
 	const FImpactDecalData* GetImpactDecal(EPhysicalSurface SurfaceType) const;
 	FORCEINLINE USoundBase* GetImpactSound() const { return ImpactSound; }
-
 	
+	UFUNCTION(Category="Cartridge", BlueprintCallable)
+	float GetBaseDamage() const { return BaseDamage; }
 
 public:
 	UPROPERTY(Category="Cartridge", BlueprintReadWrite)
@@ -135,4 +136,7 @@ protected:
 	
 	UPROPERTY(Category="Firing", EditDefaultsOnly)
 	USoundBase* ImpactSound;
+
+	UPROPERTY(Category="Firing", EditDefaultsOnly)
+	float BaseDamage;
 };

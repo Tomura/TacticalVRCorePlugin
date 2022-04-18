@@ -5,6 +5,7 @@
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Weapon/TVRCartridge.h"
+#include "TacticalTraceChannels.h"
 
 UTVRInternalMagazineComponent::UTVRInternalMagazineComponent(const FObjectInitializer& OI) : Super(OI)
 {
@@ -12,21 +13,31 @@ UTVRInternalMagazineComponent::UTVRInternalMagazineComponent(const FObjectInitia
 	CurrentAmmo = 8;
 
 	AmmoInsertSound = nullptr;
+	bUseComplexInsertion = false;
+	CartridgeSpeed = 0.f;
+	
+}
+
+void UTVRInternalMagazineComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	if(CurrentInsertingCartridge)
+	{
+		
+	}
 }
 
 
 void UTVRInternalMagazineComponent::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+                                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(CanInsertAmmo())
+	if(CanInsertAmmo() && IsAllowedAmmo(OtherActor->GetClass()))
 	{
-		if(IsAllowedAmmo(OtherActor->GetClass()))
+		const auto Cartridge = Cast<ATVRCartridge>(OtherActor);
+		if(Cartridge->VRGripInterfaceSettings.bIsHeld)
 		{
-			class ATVRCartridge* Cartridge = Cast<ATVRCartridge>(OtherActor);
-			if(Cartridge->VRGripInterfaceSettings.bIsHeld)
-			{
-				BeginInsertCartridge(Cartridge);
-			}
+			BeginInsertCartridge(Cartridge);
 		}
 	}
 }
@@ -93,8 +104,24 @@ void UTVRInternalMagazineComponent::BeginInsertCartridge(ATVRCartridge* Cartridg
 {
 	if(Cartridge)
 	{
-		InsertedAmmo.Add(Cartridge->GetClass());
-		Cartridge->Destroy();
+		if(bUseComplexInsertion)
+		{
+			AttachCartridge(Cartridge);
+		}
+		else
+		{
+			SetCurrentInsertCartridge(Cartridge);
+			FullyInsertCartridge();
+		}
+	}
+}
+
+void UTVRInternalMagazineComponent::FullyInsertCartridge()
+{
+	if(CurrentInsertingCartridge)
+	{
+		InsertedAmmo.Add(CurrentInsertingCartridge->GetClass());
+		CurrentInsertingCartridge->Destroy();
 		
 		if(MagAudioComp)
 		{
@@ -102,4 +129,38 @@ void UTVRInternalMagazineComponent::BeginInsertCartridge(ATVRCartridge* Cartridg
 			MagAudioComp->Play();
 		}
 	}
+}
+
+void UTVRInternalMagazineComponent::SetCurrentInsertCartridge(ATVRCartridge* Cartridge)
+{
+	CurrentInsertingCartridge = Cartridge;
+}
+
+void UTVRInternalMagazineComponent::AttachCartridge(ATVRCartridge* Cartridge)
+{
+	const FAttachmentTransformRules AttachRule(EAttachmentRule::KeepWorld, true);
+	Cartridge->AttachToComponent(GetAttachParent(), AttachRule);
+	
+	Cartridge->VRGripInterfaceSettings.SlotDefaultGripType = EGripCollisionType::CustomGrip;
+	Cartridge->VRGripInterfaceSettings.FreeDefaultGripType = EGripCollisionType::CustomGrip;
+	Cartridge->VRGripInterfaceSettings.bSimulateOnDrop = false;	
+	Cartridge->GetStaticMeshComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+	
+	if(Cartridge->GetStaticMeshComponent()->IsSimulatingPhysics())
+	{
+		Cartridge->GetStaticMeshComponent()->SetSimulatePhysics(false);
+	}
+	Cartridge->GetStaticMeshComponent()->SetCollisionResponseToChannel(ECC_VRTraceChannel, ECR_Overlap);
+	
+	if(UGripMotionControllerComponent* GrippingHand = Cartridge->VRGripInterfaceSettings.HoldingControllers[0].HoldingController)
+	{		
+		const FTransform SavedRelTransform = GrippingHand ? GrippingHand->GrippedObjects[0].RelativeTransform : FTransform::Identity;
+		GrippingHand->DropObjectByInterface(Cartridge, 0, FVector::ZeroVector, FVector::ZeroVector);
+		GrippingHand->GripObjectByInterface(Cartridge, SavedRelTransform, true, EName::NAME_None, EName::NAME_None, true);
+	}
+	
+	SetCurrentInsertCartridge(Cartridge);
+	SetComponentTickEnabled(true);
+	// bCanRemoveCartridge = false;
+	CartridgeSpeed = 0.f;
 }

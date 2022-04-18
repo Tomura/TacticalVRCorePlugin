@@ -259,6 +259,8 @@ public:
 	
 	UPROPERTY(Category = "Magazine", EditDefaultsOnly)
 	TSubclassOf<class ATVRCartridge> CartridgeType;
+
+	FORCEINLINE int32 GetDisplayAmmo() const;
 	
 protected:
 	UPROPERTY()
@@ -284,6 +286,10 @@ protected:
     UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditAnywhere, meta=(EditCondition ="bNotFull", ClampMin=0, ClampMax=200))
     int32 CurrentAmmo;
 
+	/** Limit of the displayed Ammo. A Value of 0 or below will mean no limit. */
+	UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditAnywhere, meta=(ClampMin=-1, ClampMax=200))
+	int32 LimitDisplayAmmo;
+	
     /** Is Magazine attached to a weapon? DEPRECATED */
     bool bIsAttached;
 	

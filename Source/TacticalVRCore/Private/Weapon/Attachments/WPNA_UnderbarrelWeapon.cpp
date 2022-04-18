@@ -66,7 +66,7 @@ UHandSocketComponent* AWPNA_UnderbarrelWeapon::GetHandSocket_Implementation(FNam
 	{
 		return PrimaryHandSocket;
 	}
-	if(SlotName == FName(TEXT("UnderbarrelSecondary")) && GetSecondaryHandSocket())
+	if(SlotName == GetPrefixedSocketName(GetSecondaryHandSocket()) && GetSecondaryHandSocket())
 	{
 		return GetSecondaryHandSocket();
 	}

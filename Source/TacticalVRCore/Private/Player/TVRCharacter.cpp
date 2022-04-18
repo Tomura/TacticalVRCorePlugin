@@ -96,8 +96,8 @@ ATVRCharacter::ATVRCharacter(const FObjectInitializer& OI)
 	bIsActionBPressed_L = false;
 	bIsActionBPressed_R = false;
 
-	GrabHysteresisLeft = FHysteresisValue(0.2f, 0.5f);
-	GrabHysteresisRight = FHysteresisValue(0.2f, 0.5f);
+	GrabHysteresisLeft = FTVRHysteresisValue(0.2f, 0.5f);
+	GrabHysteresisRight = FTVRHysteresisValue(0.2f, 0.5f);
 }
 
 void ATVRCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & OutLifetimeProps) const
@@ -684,6 +684,7 @@ bool ATVRCharacter::TryGrip(UGripMotionControllerComponent* Hand, bool bIsLargeG
 		FHitResult* BestHit = nullptr;
 		uint8 BestPriority = 0;
 		UObject* BestObject = nullptr;
+		FVector BestLoc;
 		for(FHitResult& Hit : Hits)
 		{
 			UObject* GripInterface = nullptr;
@@ -721,7 +722,7 @@ bool ATVRCharacter::TryGrip(UGripMotionControllerComponent* Hand, bool bIsLargeG
 			}
 			// todo: might insert some special code for secondary gripping
 			const FBPAdvGripSettings Settings = IVRGripInterface::Execute_AdvancedGripSettings(GripInterface);
-			bool bIsHigherPriority = (BestObject == nullptr) || (Settings.GripPriority > BestPriority);
+			int32 DeltaPrio = BestObject == nullptr ? 1 : Settings.GripPriority - BestPriority;
 
 			if(BestObject != nullptr)
 			{
@@ -738,12 +739,25 @@ bool ATVRCharacter::TryGrip(UGripMotionControllerComponent* Hand, bool bIsLargeG
 						IVRGripInterface::Execute_ClosestGripSlotInRange(BestObject, Hand->GetComponentLocation(), true, bHasSecondary, SecondaryTF, SlotName, Hand, NAME_None);
 						if(!bHasSecondary)
 						{
-							bIsHigherPriority = true; // we do not wanna steal is possible							
+							DeltaPrio = 1; // we do not wanna steal is possible							
 						}
 					}
 				}
 			}
-			if(IsGripValid(GripInterface, bIsLargeGrip, Hand) && bIsHigherPriority)
+			
+			if(DeltaPrio == 0) // if there is equal priority we need to still resolve this
+			{
+				// We check the distance between trace start center of grip sphere, to the impact of the sweep
+				const FVector TraceStart = Hit.TraceStart;
+				const float DistA = (Hit.TraceStart - Hit.ImpactPoint).SizeSquared();
+				const float DistBest = (Hit.TraceStart - BestHit->ImpactPoint).SizeSquared();
+				if(DistA < DistBest)
+				{
+					DeltaPrio = 1;
+				}
+			}
+			
+			if(IsGripValid(GripInterface, bIsLargeGrip, Hand) && DeltaPrio > 0)
 			{
 				BestPriority = Settings.GripPriority;
 				BestObject = GripInterface;

@@ -26,6 +26,19 @@ ATVRWeaponAttachment::ATVRWeaponAttachment(const FObjectInitializer& OI) : Super
 	SetTickGroup(TG_PostPhysics);
 }
 
+void ATVRWeaponAttachment::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	// if there are attachment points we might need to call their construction logic
+	TArray<UTVRAttachmentPoint*> AttachPoints;
+	GetComponents<UTVRAttachmentPoint>(AttachPoints);
+	for(UTVRAttachmentPoint* LoopPoint: AttachPoints)
+	{
+		LoopPoint->OnConstruction();
+	}
+}
+
 
 // Called when the game starts or when spawned
 void ATVRWeaponAttachment::BeginPlay()
@@ -82,7 +95,7 @@ void ATVRWeaponAttachment::AttachToWeapon(UTVRAttachmentPoint* AttachPoint)
 	{
 		return;
 	}
-	ATVRGunBase* Gun = Cast<ATVRGunBase>(AttachPoint->GetOwner());
+	ATVRGunBase* Gun = AttachPoint->GetGunOwner();
 	if(Gun == nullptr)
 	{
 		return;
@@ -116,18 +129,15 @@ void ATVRWeaponAttachment::AttachToWeapon(UTVRAttachmentPoint* AttachPoint)
 
 ATVRGunBase* ATVRWeaponAttachment::GetGunOwner() const
 {
-	if(GetOwner())
+	const auto ParentActor = GetOwner() ? GetOwner() : GetAttachParentActor();
+	if(ParentActor)
 	{
-		return Cast<ATVRGunBase>(GetOwner());
-	}
-	else
-	{
-		// there is a chance so we look for our attach parent
-		if(const auto AttachParent = GetAttachParentActor())
+		if(const auto ParentAttachment = Cast<ATVRWeaponAttachment>(ParentActor))
 		{
-			return Cast<ATVRGunBase>(AttachParent);
+			return ParentAttachment->GetGunOwner();
 		}
-	}
+		return Cast<ATVRGunBase>(ParentActor);
+	}	
 	return nullptr;
 }
 
@@ -153,7 +163,13 @@ FName ATVRWeaponAttachment::GetPrefixedSocketName(USceneComponent* SocketComp) c
 void ATVRWeaponAttachment::SetVariant(uint8 Variant)
 {
 	SelectedVariant = Variant;
-	OnVariantChanged(SelectedVariant);
+	OnVariantChanged(SelectedVariant, SelectedColor);
+}
+
+void ATVRWeaponAttachment::SetColorVariant(uint8 Variant)
+{
+	SelectedColor = Variant;
+	OnVariantChanged(SelectedVariant, SelectedColor);
 }
 
 TSubclassOf<ATVRWeaponAttachment> ATVRWeaponAttachment::GetReplacementClass_Implementation(
@@ -166,5 +182,5 @@ TSubclassOf<ATVRWeaponAttachment> ATVRWeaponAttachment::GetReplacementClass_Impl
 void ATVRWeaponAttachment::SetRailType(ERailType RailType, uint8 CustomType)
 {
 	OnRailTypeChanged(RailType, CustomType);
-	SetVariant(SelectedVariant);
+	OnVariantChanged(SelectedVariant, SelectedColor);
 }

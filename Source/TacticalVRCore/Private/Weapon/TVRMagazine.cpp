@@ -41,6 +41,7 @@ ATVRMagazine::ATVRMagazine(const FObjectInitializer& OI) : Super(OI)
     AmmoCapacity = 10;
     CurrentAmmo = AmmoCapacity;
     MagInsertPercentage = 0.f;
+	LimitDisplayAmmo = -1;
 
 	bNotFull = false;
 	RoundRadius = 0.5f;
@@ -323,7 +324,7 @@ FTransform ATVRMagazine::GetRoundTransform_Implementation(int32 Index) const
 	
 	const float ForwardCoordStraight = StackSlope * static_cast<float>(Index);
 
-	if(bHasCurve)
+	if(bHasCurve && CurveRadius > 0.f)
 	{
 		const int32 IdxCurvedPart = FMath::Max(Index - CurveStartIdx, 0);
 		const float RoundAngleRad = (bDoubleStack ? RoundRadius : 2.f * RoundRadius) / CurveRadius * static_cast<float>(IdxCurvedPart);
@@ -345,7 +346,7 @@ void ATVRMagazine::UpdateFollowerLocation_Implementation()
 {
 	if(USkeletalMeshComponent* Spring = GetSpringComponent())
 	{
-		Spring->SetMorphTarget(FName("Compression"), static_cast<float>(CurrentAmmo) * FollowerMorphSlope + FollowerMorphBias, true);
+		Spring->SetMorphTarget(FName("Compression"), static_cast<float>(GetDisplayAmmo()) * FollowerMorphSlope + FollowerMorphBias, true);
 	}
 	if(GetFollowerComponent())
 	{
@@ -358,7 +359,7 @@ void ATVRMagazine::UpdateFollowerLocation_Implementation()
 
 void ATVRMagazine::GetFollowerLocationAndRotation_Implementation(FVector& OutVector, FRotator& OutRotator) const
 {
-	const FTransform AmmoTransform = GetRoundTransform(CurrentAmmo);
+	const FTransform AmmoTransform = GetRoundTransform(GetDisplayAmmo());
 	const FRotator TempRot = AmmoTransform.GetRotation().Rotator();
 	OutVector = AmmoTransform.GetLocation() * FVector(1.f, 0.f, 1.f) + FollowerOffset;
 	const float TempY = OutVector.Y;
@@ -373,7 +374,7 @@ void ATVRMagazine::UpdateRoundInstances_Implementation()
 	if(UInstancedStaticMeshComponent* Rounds = GetRoundsComponent())
 	{
 		// adjust instance count
-		const int32 InstancesToRemove = Rounds->GetInstanceCount() - CurrentAmmo;
+		const int32 InstancesToRemove = Rounds->GetInstanceCount() - GetDisplayAmmo();
 		if(InstancesToRemove > 0)
 		{
 			for(int32 i = 0; i < InstancesToRemove; i++)
@@ -396,6 +397,15 @@ void ATVRMagazine::UpdateRoundInstances_Implementation()
 		}
 		Rounds->MarkRenderStateDirty();
 	}
+}
+
+int32 ATVRMagazine::GetDisplayAmmo() const
+{
+	if(LimitDisplayAmmo <= 0)
+	{
+		return CurrentAmmo;
+	}
+	return FMath::Min(LimitDisplayAmmo, CurrentAmmo);
 }
 
 

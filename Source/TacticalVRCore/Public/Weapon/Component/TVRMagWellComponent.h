@@ -191,6 +191,8 @@ public:
 	TSubclassOf<ATVRMagazine> DefaultMagazineClass;
 	
 protected:
+	virtual void StartInsertMagazine(class ATVRMagazine* MagToInsert);
+	
     /** Reference to the current magazine. Check Validitiy if you want to be safe. */
 	UPROPERTY()
 	class ATVRMagazine* CurrentMagazine;
@@ -203,6 +205,7 @@ protected:
      * The Z axis of each point shall point forward.
      * During mag drop the magazine will be facing this way.
      */
+	UPROPERTY()
 	class USplineComponent* CachedMagSpline;
 
     /** Returns true of the mag is being dropped right now */

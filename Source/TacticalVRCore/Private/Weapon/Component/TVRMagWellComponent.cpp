@@ -115,26 +115,7 @@ void UTVRMagWellComponent::OnBeginOverlap(UPrimitiveComponent* OverlappedCompone
         ATVRMagazine* Mag = Cast<ATVRMagazine>(OtherActor);
         if(Mag != nullptr && IsAllowedMagType(Mag->GetClass()) && Mag->VRGripInterfaceSettings.bIsHeld)
         {
-            // const FTransform SplineTransform = GetMagSpline()->GetTransformAtTime(0.f, ESplineCoordinateSpace::World, false);
-        	FTransform SplineTransform;
-        	GetSplineTransform(Mag->GetAttachOrigin()->GetComponentLocation(), SplineTransform);
-            if(Mag->TryAttachToWeapon(Gun->GetStaticMeshComponent(), this, TransformSplineToMagazineCoordinates(SplineTransform)))
-            {
-                bIsMagFree = true;
-                //GetWorld()->GetTimerManager().SetTimerForNextTick(this, &UTVRMagWellComponent::RepositionMagazine);
-                CurrentMagazine = Mag;
-                //Gun->OnMagazineInserted(Mag);
-            	if(MagAudioComp)
-            	{
-            		MagAudioComp->Stop();
-            		MagAudioComp->SetIntParameter(FName("MagEvent"), MAG_AUDIO_StartInsert);
-            		MagAudioComp->Play();
-            	}
-            	if(EventOnMagazineStartInsert.IsBound())
-            	{
-            		EventOnMagazineStartInsert.Broadcast();
-            	}
-            }
+			StartInsertMagazine(Mag);
         }
     }
 }
@@ -574,6 +555,37 @@ ATVRMagazine* UTVRMagWellComponent::SpawnMagazineAttached(TSubclassOf<ATVRMagazi
 		}
 	}
 	return nullptr;
+}
+
+void UTVRMagWellComponent::StartInsertMagazine(ATVRMagazine* MagToInsert)
+{
+	ATVRGunBase* Gun = GetGunOwner();
+	if(Gun == nullptr || GetMagSpline() == nullptr)
+	{
+		return;
+	}
+	
+	// const FTransform SplineTransform = GetMagSpline()->GetTransformAtTime(0.f, ESplineCoordinateSpace::World, false);
+	FTransform SplineTransform;
+	GetSplineTransform(MagToInsert->GetAttachOrigin()->GetComponentLocation(), SplineTransform);
+	if(MagToInsert->TryAttachToWeapon(Gun->GetStaticMeshComponent(), this, TransformSplineToMagazineCoordinates(SplineTransform)))
+	{
+		bIsMagFree = true;
+		//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &UTVRMagWellComponent::RepositionMagazine);
+		CurrentMagazine = MagToInsert;
+		//Gun->OnMagazineInserted(Mag);
+
+		if(MagAudioComp)
+		{
+			MagAudioComp->Stop();
+			MagAudioComp->SetIntParameter(FName("MagEvent"), MAG_AUDIO_StartInsert);
+			MagAudioComp->Play();
+		}
+		if(EventOnMagazineStartInsert.IsBound())
+		{
+			EventOnMagazineStartInsert.Broadcast();
+		}
+	}
 }
 
 FTransform UTVRMagWellComponent::TransformSplineToMagazineCoordinates(const FTransform& InTransform) const

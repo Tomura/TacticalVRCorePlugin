@@ -21,17 +21,17 @@
 
 #include "Weapon/TVRGunWithChild.h"
 
-#include "Weapon/Component/TVRAttachPoint_Laser.h"
-#include "Weapon/Component/TVRAttachPoint_Light.h"
-#include "Weapon/Component/TVRAttachPoint_PistolLight.h"
-#include "Weapon/Component/TVRAttachPoint_Sight.h"
-#include "Weapon/Component/TVRAttachPoint_Underbarrel.h"
-
 #include "Weapon/TVRGunAnimInstance.h"
 #include "Weapon/TVRCartridge.h"
 #include "Weapon/Attachments/TVRWeaponAttachment.h"
+#include "Weapon/Attachments/WPNA_Barrel.h"
 #include "Weapon/Attachments/WPNA_ForeGrip.h"
+#include "Weapon/Attachments/WPNA_Laser.h"
+#include "Weapon/Attachments/WPNA_Light.h"
+#include "Weapon/Attachments/WPNA_Sight.h"
+#include "Weapon/Attachments/WPNA_PistolLight.h"
 #include "Weapon/Attachments/WPNA_UnderbarrelWeapon.h"
+#include "Weapon/Component/TVRAttachPoint_Barrel.h"
 #include "Weapon/Component/TVRChargingHandleInterface.h"
 #include "Weapon/Component/TVREjectionPort.h"
 #include "Weapon/Component/TVRGunFireComponent.h"
@@ -39,8 +39,6 @@
 FName ATVRGunBase::PrimarySlotName(TEXT("Primary"));
 FName ATVRGunBase::SecondarySlotName(TEXT("Secondary"));
 FName ATVRGunBase::UnderbarrelSlotName(TEXT("Underbarrel"));
-
-
 
 ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
 {
@@ -94,7 +92,7 @@ ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
 
     PrimaryActorTick.bCanEverTick = true;
 	
-	GunType = EGunType::Primary;
+	GunType = ETVRGunType::Primary;
 
 	SetTickGroup(TG_PostPhysics);
 
@@ -114,11 +112,6 @@ ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
 	
 	bHasMagReleaseOnPrimaryGrip = true;
 	bHasBoltReleaseNearPrimaryGrip = true;
-
-	AttachPoint_Underbarrel = nullptr;
-	AttachPoint_Laser = nullptr;
-	AttachPoint_Light = nullptr;
-	AttachPoint_Sight = nullptr;
 	
 	SecondaryController = nullptr;
 
@@ -145,11 +138,6 @@ void ATVRGunBase::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 	InitAttachmentPoints();
-
-	if(AttachPoint_Sight)
-	{
-		FoldSights(AttachPoint_Sight->GetCurrentAttachmentClass() != nullptr);		
-	}
 }
 
 void ATVRGunBase::BeginPlay()
@@ -205,45 +193,14 @@ void ATVRGunBase::InitAttachmentPoints()
 	{
 		AttachPoint->OnConstruction();
 	}
-
-	AttachPoint_Underbarrel = nullptr;
-	AttachPoint_Laser = nullptr;
-	AttachPoint_Sight = nullptr;
-	AttachPoint_Light = nullptr;
 	
-	GetComponents<UTVRAttachmentPoint>(AttachmentPoints);
-	for(UTVRAttachmentPoint* LoopPnt : AttachmentPoints)
+	const auto Sight = GetAttachment<AWPNA_Sight>();
+	const bool bFoldSights = (Sight != nullptr);
+	FoldSights(bFoldSights);
+	if(const auto Barrel = GetAttachment<AWPNA_Barrel>())
 	{
-		if(AttachPoint_Underbarrel == nullptr)
-		{
-			if(UTVRAttachPoint_Underbarrel* LoopPnt_UB = Cast<UTVRAttachPoint_Underbarrel>(LoopPnt))
-			{
-				AttachPoint_Underbarrel = LoopPnt_UB;
-			}
-		}
-		if(AttachPoint_Laser == nullptr)
-		{
-			if(LoopPnt->IsA(UTVRAttachPoint_Laser::StaticClass()) || LoopPnt->IsA(UTVRAttachPoint_PistolLight::StaticClass()))
-			{
-				AttachPoint_Laser = LoopPnt;
-			}
-		}
-		if(AttachPoint_Sight == nullptr)
-		{
-			if(LoopPnt->IsA(UTVRAttachPoint_Sight::StaticClass()))
-			{
-				AttachPoint_Sight = LoopPnt;
-			}
-		}
-		if(AttachPoint_Light == nullptr)
-		{
-			if(LoopPnt->IsA(UTVRAttachPoint_Light::StaticClass()) || LoopPnt->IsA(UTVRAttachPoint_PistolLight::StaticClass()))
-			{
-				AttachPoint_Light = LoopPnt;
-			}
-		}
+		Barrel->OnFoldSights(bFoldSights);
 	}
-
 }
 
 void ATVRGunBase::Tick(float DeltaSeconds)
@@ -428,69 +385,73 @@ void ATVRGunBase::ClosestGripSlotInRange_Implementation(FVector WorldLocation, b
     }
     else
     {
-    	// Check for Underbarrel Attachment (Foregrip, Launcher), we will always prefer it
-    	UTVRAttachPoint_Underbarrel* AttachPnt = GetAttachPoint_Underbarrel();
-    	if(AttachPnt)
-    	{
-    		if(const auto WPNAttachment = AttachPnt->GetCurrentAttachment())
-    		{
-    			if(WPNAttachment->GetGripSlot(WorldLocation, CallingController, SlotWorldTransform, SlotName))
-    			{
-    				bHadSlotInRange = true;
-    				
-    				const UTVRCoreGameplaySettings* TVRGameplaySettingsCDO = GetDefault<UTVRCoreGameplaySettings>();
-    				if(TVRGameplaySettingsCDO->GunStockType == EStockType::ST_PhysicalStock)
-    				{
-    					const float SecondaryGripDistance = 35.f;
-    					const FVector SecondaryLoc = GetPrimaryGripSlot()->GetComponentLocation() + GetActorRightVector() * SecondaryGripDistance;
-    					const FRotator SecondaryRot = UKismetMathLibrary::MakeRotFromXZ(GetActorRightVector(), GetActorUpVector());
-    					SlotWorldTransform = FTransform(SecondaryRot, SecondaryLoc, FVector::OneVector);
-    				}    					
-    				return;
-    			}
-    		}
-    	}
-    	
-    	if(GetSecondarySlotComponent() != nullptr)
-        {
-            const float RangeSquared = VRGripInterfaceSettings.SecondarySlotRange * VRGripInterfaceSettings.SecondarySlotRange;
-            USplineComponent* SecondarySpline = Cast<USplineComponent>(GetSecondarySlotComponent());
-            const FTransform BestTransform = SecondarySpline ?
-                    SecondarySpline->FindTransformClosestToWorldLocation(WorldLocation, ESplineCoordinateSpace::World, false) :
-                    GetSecondarySlotComponent()->GetComponentTransform();
-            if((BestTransform.GetLocation()-WorldLocation).SizeSquared() <= RangeSquared)
-            {
-                bHadSlotInRange = true;            	
-                SlotName = SecondarySlotName;
-            	
-            	const UTVRCoreGameplaySettings* TVRGameplaySettingsCDO = GetDefault<UTVRCoreGameplaySettings>();
-	            switch (TVRGameplaySettingsCDO->GunStockType)
-	            {
-		            case EStockType::ST_None:
-	            	case EStockType::ST_VirtualStock:		            	
-		            	SlotWorldTransform = BestTransform;
-	            		break;
-	            	case EStockType::ST_PhysicalStock:
-	            		// in case of a physical stock, we want consistency, so that one stock setting works for all guns.
-	            		// we assume that both controllers are in one line.
-	            		// a future implementation could capture the controller positions in the stock and use that capture to get a suitable point
-	            		// from the stocks settings.
-	            		
-	            		const float SecondaryGripDistance = 35.f;
-	            		const FVector SecondaryLoc = GetPrimaryGripSlot()->GetComponentLocation() + GetActorRightVector() * SecondaryGripDistance;
-	            		const FRotator SecondaryRot = UKismetMathLibrary::MakeRotFromXZ(GetActorRightVector(), GetActorUpVector());
-	            		SlotWorldTransform = FTransform(SecondaryRot, SecondaryLoc, FVector::OneVector);
-	            }
-            	
-                return;
-            }
-        }
+	    if(GetSecondarySlot(WorldLocation, SlotWorldTransform, SlotName, CallingController))
+	    {
+	    	bHadSlotInRange = true;
+	    	const UTVRCoreGameplaySettings* TVRGameplaySettingsCDO = GetDefault<UTVRCoreGameplaySettings>();
+	    	switch (TVRGameplaySettingsCDO->GunStockType)
+	    	{
+	    	case EStockType::ST_None:
+			case EStockType::ST_VirtualStock:
+	    		break;
+	    	case EStockType::ST_PhysicalStock:
+	    		// in case of a physical stock, we want consistency, so that one stock setting works for all guns.
+	    		// we assume that both controllers are in one line.
+	    		// a future implementation could capture the controller positions in the stock and use that capture to get a suitable point
+	    		// from the stocks settings.
+	            			
+	    		const FVector SecondaryGripOffset = TVRGameplaySettingsCDO->PhysicalStockSecondaryOffset;
+	    		const FVector SecondaryLoc = GetPrimaryGripSlot()->GetComponentLocation()
+	    			+ GetActorRightVector() * SecondaryGripOffset.X
+					- GetActorForwardVector() * SecondaryGripOffset.Y
+	    			+ GetActorUpVector() * SecondaryGripOffset.Z;
+	    		const FRotator SecondaryRot = UKismetMathLibrary::MakeRotFromXZ(GetActorRightVector(), GetActorUpVector());
+	    		SlotWorldTransform = FTransform(SecondaryRot, SecondaryLoc, FVector::OneVector);
+	    	}
+	    	return;
+	    }
     }
     bHadSlotInRange = false;
 }
 
+bool ATVRGunBase::GetSecondarySlot(FVector WorldLocation, FTransform& OutTransform, FName& OutSlotName,
+	UGripMotionControllerComponent* CallingController) const
+{
+	if(const auto Foregrip = GetAttachment<AWPNA_ForeGrip>())
+	{
+		if(Foregrip->GetGripSlot(WorldLocation, CallingController, OutTransform, OutSlotName))
+		{						
+			return true; 
+		}
+	}
+	if(const auto Barrel = GetAttachment<AWPNA_Barrel>())
+	{
+		if(Barrel->GetGripSlot(WorldLocation, CallingController, OutTransform, OutSlotName))
+		{					
+			return true;
+		}
+	}
+	if(GetSecondarySlotComponent() != nullptr)
+	{
+		const float RangeSquared = VRGripInterfaceSettings.SecondarySlotRange * VRGripInterfaceSettings.SecondarySlotRange;
+		USplineComponent* SecondarySpline = Cast<USplineComponent>(GetSecondarySlotComponent());
+		const FTransform BestTransform = SecondarySpline ?
+				SecondarySpline->FindTransformClosestToWorldLocation(
+					WorldLocation, ESplineCoordinateSpace::World, false) :
+				GetSecondarySlotComponent()->GetComponentTransform();
+		
+		if((BestTransform.GetLocation() - WorldLocation).SizeSquared() <= RangeSquared)
+		{
+			OutTransform = BestTransform;
+			OutSlotName = SecondarySlotName;
+			return true;
+		}
+	}
+	return false;
+}
+
 bool ATVRGunBase::RequestsSocketing_Implementation(USceneComponent*& ParentToSocketTo, FName& OptionalSocketName,
-	FTransform_NetQuantize& RelativeTransform)
+                                                   FTransform_NetQuantize& RelativeTransform)
 {
 	// primary was released, lets check whether there is a secondary:
 	ATVRCharacter* CharacterOwner = Cast<ATVRCharacter>(GetOwner());
@@ -534,15 +495,14 @@ UHandSocketComponent* ATVRGunBase::GetHandSocket_Implementation(FName SocketName
 		return GetSecondaryHandSocket();
 	}
 	
-	if (GetAttachPoint_Underbarrel())
-	{
-		if(const auto Attachment = GetAttachPoint_Underbarrel()->GetCurrentAttachment())
-		{
-			if(Attachment->Implements<UTVRHandSocketInterface>())
-			{
-				return Execute_GetHandSocket(Attachment, SocketName);
-			}
-		}
+	if(const auto ForeGrip = GetAttachment<AWPNA_ForeGrip>())
+	{		
+		return Execute_GetHandSocket(ForeGrip, SocketName);
+	}
+	
+	if(const auto BarrelAttachment = GetAttachment<AWPNA_Barrel>())
+	{		
+		return Execute_GetHandSocket(BarrelAttachment, SocketName);
 	}
 	return nullptr;
 }
@@ -800,15 +760,9 @@ void ATVRGunBase::OnSecondaryGrip_Implementation(UGripMotionControllerComponent*
 
 	if(GripInformation.SecondaryGripInfo.bIsSlotGrip && GripInformation.SecondaryGripInfo.SecondarySlotName != SecondarySlotName)
 	{
-		if(GetAttachPoint_Underbarrel())
+		if(const auto ForeGrip = GetAttachment<AWPNA_ForeGrip>())
 		{
-			if(const auto WPNA = GetAttachPoint_Underbarrel()->GetCurrentAttachment())
-			{
-				if(const auto ForeGrip = Cast<AWPNA_ForeGrip>(WPNA))
-				{
-					ForeGrip->OnGripped(SecondaryController, SecondaryGripInfo, true);
-				}
-			}			
+			ForeGrip->OnGripped(SecondaryController, SecondaryGripInfo, true);
 		}
 	}
 
@@ -825,15 +779,9 @@ void ATVRGunBase::OnSecondaryGripRelease_Implementation(UGripMotionControllerCom
 {
 	Execute_OnEndSecondaryUsed(this);
 	Super::OnSecondaryGripRelease_Implementation(GripOwningController, ReleasingSecondaryGripComponent, GripInformation);
-	if(GetAttachPoint_Underbarrel())
+	if(const auto ForeGrip = GetAttachment<AWPNA_ForeGrip>())
 	{
-		if(const auto WPNA = GetAttachPoint_Underbarrel()->GetCurrentAttachment())
-		{
-			if(const auto ForeGrip = Cast<AWPNA_ForeGrip>(WPNA))
-			{
-				ForeGrip->OnReleased(SecondaryController, SecondaryGripInfo, true);
-			}
-		}			
+		ForeGrip->OnReleased(SecondaryController, SecondaryGripInfo, true);		
 	}
 	SecondaryController = nullptr;
 
@@ -963,14 +911,26 @@ void ATVRGunBase::AddRecoil()
 {
 	FTransform RecoilPOA;
 	GetRecoilPointOfAttack(RecoilPOA);
+	FVector RecoilImpulseToApply = RecoilImpulse;
+	FVector AngularRecoilImpulseToApply = RecoilAngularImpulse;
+
+	for(const auto AttachPoint: AttachmentPoints)
+	{
+		if(const auto LoopWPNA = AttachPoint->GetCurrentAttachment())
+		{
+			RecoilImpulseToApply *= LoopWPNA->GetRecoilModifier();
+			AngularRecoilImpulseToApply *= LoopWPNA->GetRecoilModifier();
+		}
+	}
+	
     if(VRGripInterfaceSettings.bIsHeld)
     {
-    	AddCustomRecoil(RecoilPOA, RecoilImpulse, RecoilAngularImpulse);
+    	AddCustomRecoil(RecoilPOA, RecoilImpulseToApply, AngularRecoilImpulseToApply);
     }
 	else if(IsHeldByParentGun())
 	{
 		ATVRGunWithChild* ParentGun = Cast<ATVRGunWithChild>(GetStaticMeshComponent()->GetAttachmentRootActor());
-		ParentGun->AddCustomRecoil(RecoilPOA, RecoilImpulse, RecoilAngularImpulse);
+		ParentGun->AddCustomRecoil(RecoilPOA, RecoilImpulseToApply, AngularRecoilImpulseToApply);
 	}
 }
 
@@ -1037,11 +997,6 @@ void ATVRGunBase::OnCartridgeSpent()
 }
 
 
-bool ATVRGunBase::HasRoundInChamber() const
-{
-    return RoundInChamber != nullptr;
-}
-
 bool ATVRGunBase::CanStartFire() const
 {
     if(FiringComponent->IsInFiringCooldown())
@@ -1106,60 +1061,36 @@ void ATVRGunBase::OnMagReleaseReleased()
 
 bool ATVRGunBase::OnSecondaryMagReleasePressed()
 {
-	if(GetAttachPoint_Underbarrel())
+	if(const auto UnderBarrelWeapon = GetAttachment<AWPNA_UnderbarrelWeapon>())
 	{
-		if(ATVRWeaponAttachment* CurrentAttachment = GetAttachPoint_Underbarrel()->GetCurrentAttachment())
-		{
-			if(AWPNA_UnderbarrelWeapon* UnderBarrelWeapon = Cast<AWPNA_UnderbarrelWeapon>(CurrentAttachment))
-			{
-				return UnderBarrelWeapon->OnMagReleasePressed();
-			}
-		}
+		return UnderBarrelWeapon->OnMagReleasePressed();
 	}
 	return false;
 }
 
 bool ATVRGunBase::OnSecondaryMagReleaseReleased()
 {
-	if(GetAttachPoint_Underbarrel())
+	if(const auto UnderBarrelWeapon = GetAttachment<AWPNA_UnderbarrelWeapon>())
 	{
-		if(ATVRWeaponAttachment* CurrentAttachment = GetAttachPoint_Underbarrel()->GetCurrentAttachment())
-		{
-			if(AWPNA_UnderbarrelWeapon* UnderBarrelWeapon = Cast<AWPNA_UnderbarrelWeapon>(CurrentAttachment))
-			{
-				return UnderBarrelWeapon->OnMagReleaseReleased();
-			}
-		}
+		return UnderBarrelWeapon->OnMagReleaseReleased();
 	}
 	return false;
 }
 
 bool ATVRGunBase::OnSecondaryBoltReleasePressed()
 {
-	if(GetAttachPoint_Underbarrel())
+	if(const auto UnderBarrelWeapon = GetAttachment<AWPNA_UnderbarrelWeapon>())
 	{
-		if(ATVRWeaponAttachment* CurrentAttachment = GetAttachPoint_Underbarrel()->GetCurrentAttachment())
-		{
-			if(AWPNA_UnderbarrelWeapon* UnderBarrelWeapon = Cast<AWPNA_UnderbarrelWeapon>(CurrentAttachment))
-			{
-				return UnderBarrelWeapon->OnBoltReleasePressed();
-			}
-		}
+		return UnderBarrelWeapon->OnBoltReleasePressed();
 	}
 	return false;
 }
 
 bool ATVRGunBase::OnSecondaryBoltReleaseReleased()
 {
-	if(GetAttachPoint_Underbarrel())
+	if(const auto UnderBarrelWeapon = GetAttachment<AWPNA_UnderbarrelWeapon>())
 	{
-		if(ATVRWeaponAttachment* CurrentAttachment = GetAttachPoint_Underbarrel()->GetCurrentAttachment())
-		{
-			if(AWPNA_UnderbarrelWeapon* UnderBarrelWeapon = Cast<AWPNA_UnderbarrelWeapon>(CurrentAttachment))
-			{
-				return UnderBarrelWeapon->OnBoltReleaseReleased();
-			}
-		}
+		return UnderBarrelWeapon->OnBoltReleaseReleased();
 	}
 	return false;
 }
@@ -1328,35 +1259,27 @@ bool ATVRGunBase::IsMagReleasePressed() const
     return false;
 }
 
-
-UTVRAttachmentPoint* ATVRGunBase::GetSightAttachmentPoint()
-{
-	return AttachPoint_Sight;
-}
-
-UTVRAttachmentPoint* ATVRGunBase::GetLaserAttachmentPoint()
-{
-	return AttachPoint_Laser;
-}
-
-UTVRAttachmentPoint* ATVRGunBase::GetLightAttachmentPoint()
-{
-	return AttachPoint_Light;
-}
-
 void ATVRGunBase::ToggleLaser_Implementation(UGripMotionControllerComponent* UsingHand)
 {
-	if(UTVRAttachmentPoint* AttachPnt = GetLaserAttachmentPoint())
+	if(const auto Laser = GetAttachment<AWPNA_Laser>())
 	{
-		AttachPnt->ToggleLaser();
+		Laser->ToggleLaser(UsingHand);
+	}
+	else if(const auto LaserLight = GetAttachment<AWPNA_PistolLight>())
+	{
+		LaserLight->ToggleLaser(UsingHand);
 	}
 }
 
 void ATVRGunBase::ToggleLight_Implementation(UGripMotionControllerComponent* UsingHand)
 {
-	if(UTVRAttachmentPoint* AttachPnt = GetLightAttachmentPoint())
+	if(const auto Light = GetAttachment<AWPNA_Light>())
 	{
-		AttachPnt->ToggleLight();
+		Light->ToggleLight(UsingHand);
+	}
+	else if(const auto LaserLight = GetAttachment<AWPNA_PistolLight>())
+	{
+		LaserLight->ToggleLight(UsingHand);
 	}
 }
 

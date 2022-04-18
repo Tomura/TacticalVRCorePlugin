@@ -15,13 +15,15 @@ UTVRCoreGameplaySettings::UTVRCoreGameplaySettings(const FObjectInitializer& OI)
 
 	GunStockType = EStockType::ST_None;
 	VirtualStockStrength = 0.f;
+	PhysicalStockSecondaryOffset = FVector(35.f, 0.f, 0.f);
+	 
 	SightReticleColor = FColor(255, 0, 0);
 	PistolNightSightColor = FColor(0, 255, 0);
 	LaserColor = FColor(0, 255, 30);
 
 	SnapTurnHisteresis = FFloatRange(0.3f, 0.65f);
 
-	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> SightMPCObj(TEXT("/Game/MaterialParameterCollections/MPC_Sight.MPC_Sight"));
+	static ConstructorHelpers::FObjectFinder<UMaterialParameterCollection> SightMPCObj(TEXT("/TacticalVRCore/MaterialParameterCollections/MPC_Sight.MPC_Sight"));
 	if(SightMPCObj.Succeeded())
 	{
 		UE_LOG(LogTemp, Log, TEXT("Found SightMPC")); 

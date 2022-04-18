@@ -11,7 +11,7 @@ UTVRAttachmentPoint::UTVRAttachmentPoint(const FObjectInitializer& OI) : Super(O
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-	CurrentAttachment = nullptr;
+	CachedCurrentAttachment = nullptr;
 	PreferredVariant = 0;
 	RailType = ERailType::Picatinny;
 	CustomRailType = 0;
@@ -19,7 +19,7 @@ UTVRAttachmentPoint::UTVRAttachmentPoint(const FObjectInitializer& OI) : Super(O
 
 void UTVRAttachmentPoint::OnWeaponAttachmentAttached(ATVRWeaponAttachment* NewAttachment)
 {
-	CurrentAttachment = NewAttachment;
+	CachedCurrentAttachment = NewAttachment;
 	if(EventOnWeaponAttachmentAttached.IsBound())
 	{
 		EventOnWeaponAttachmentAttached.Broadcast(this, NewAttachment);
@@ -62,8 +62,9 @@ void UTVRAttachmentPoint::OnConstruction()
 	{
 		if(const auto WPNA = Cast<ATVRWeaponAttachment>(GetChildActor()))
 		{
-			WPNA->SetVariant(PreferredVariant);
 			WPNA->SetRailType(RailType, CustomRailType);
+			WPNA->SetVariant(PreferredVariant);
+			WPNA->SetColorVariant(PreferredVariant);
 		}
 	}
 }
@@ -77,6 +78,7 @@ void UTVRAttachmentPoint::CreateChildActor()
 		if(auto WPNA = Cast<ATVRWeaponAttachment>(GetChildActor()))
 		{
 			WPNA->SetVariant(PreferredVariant);
+			WPNA->SetColorVariant(PreferredVariant);
 			WPNA->SetRailType(RailType, CustomRailType);
 		}
 	}
@@ -86,6 +88,18 @@ void UTVRAttachmentPoint::CreateChildActor()
 bool UTVRAttachmentPoint::SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass)
 {
 	return false;
+}
+
+ATVRWeaponAttachment* UTVRAttachmentPoint::GetCurrentAttachment() const
+{
+	if(CachedCurrentAttachment)
+	{
+		return CachedCurrentAttachment;
+	}
+	else if (GetChildActor()) {
+		return Cast<ATVRWeaponAttachment>(GetChildActor());
+	}
+	return nullptr;
 }
 
 // Called every frame
@@ -99,6 +113,14 @@ void UTVRAttachmentPoint::TickComponent(float DeltaTime, ELevelTick TickType,
 
 ATVRGunBase* UTVRAttachmentPoint::GetGunOwner() const
 {
-	return GetOwner() ? Cast<ATVRGunBase>(GetOwner()) : nullptr;
+	if(const auto GunOwner = Cast<ATVRGunBase>(GetOwner()))
+	{
+		return GunOwner;
+	}
+	if(const auto AttachmentOwner = Cast<ATVRWeaponAttachment>(GetOwner()))
+	{		
+		return AttachmentOwner->GetGunOwner();
+	}
+	return nullptr;
 }
 

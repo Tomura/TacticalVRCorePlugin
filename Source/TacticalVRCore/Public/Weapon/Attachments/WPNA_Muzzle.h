@@ -24,6 +24,10 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
+	virtual bool IsSuppressor() const { return bIsSuppressor; }
+
+	virtual void ModifyMuzzleLocation();
+
 protected:
 	UPROPERTY(Category = "Muzzle", EditDefaultsOnly)
 	bool bIsSuppressor;

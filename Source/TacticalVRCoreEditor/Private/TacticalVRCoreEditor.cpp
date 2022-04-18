@@ -32,11 +32,14 @@ void FTacticalVRCoreEditorModule::StartupModule()
 	PropertyModule.RegisterCustomClassLayout(
 		"TVRAttachPoint_Stock",
 		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRAttachPointStockDetails::MakeInstance));
-	PropertyModule.NotifyCustomizationModuleChanged();
+	PropertyModule.RegisterCustomClassLayout(
+		"TVRAttachPoint_Barrel",
+		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRAttachPointBarrelDetails::MakeInstance));
 
-	// PropertyModule.RegisterCustomClassLayout(
-	// 	"TVRGunBase",
-	// 	FOnGetDetailCustomizationInstance::CreateStatic(&FTVRGunDetails::MakeInstance));
+	PropertyModule.RegisterCustomClassLayout(
+		"TVRGunBase",
+		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRGunDetails::MakeInstance));
+	PropertyModule.NotifyCustomizationModuleChanged();
 }
 
 void FTacticalVRCoreEditorModule::ShutdownModule()
@@ -50,5 +53,6 @@ void FTacticalVRCoreEditorModule::ShutdownModule()
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_PistolLight");
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Muzzle");
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Stock");
-	// PropertyModule.UnregisterCustomClassLayout("TVRGunBase");
+	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Barrel");
+	PropertyModule.UnregisterCustomClassLayout("TVRGunBase");
 }

@@ -7,6 +7,9 @@
 #include "Weapon/Attachments/TVRWeaponAttachment.h"
 #include "WPNA_Laser.generated.h"
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FLaserToggleEvent, bool, bIsLaserOn, class UGripMotionControllerComponent*, UsingHand);
+
 /**
  * 
  */
@@ -26,6 +29,10 @@ class TACTICALVRCORE_API AWPNA_Laser : public ATVRWeaponAttachment
 	
 	UPROPERTY(Category = "Laser", EditAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess=true))
 	class UAudioComponent* LaserToggleSound;
+
+public:
+	UPROPERTY(Category = "Laser", BlueprintAssignable)
+	FLaserToggleEvent EventOnToggleLaser;
 	
 protected:
 	bool bIsLaserOn;
@@ -53,11 +60,16 @@ protected:
 public:
 	virtual void Tick(float DeltaSeconds) override;
 
-	UFUNCTION(Category= "Light", BlueprintCallable)
+	UFUNCTION(Category= "Laser", BlueprintCallable)
 	virtual void ToggleLaser(class UGripMotionControllerComponent* UsingHand);
+	
+	UFUNCTION(Category= "Laser", BlueprintImplementableEvent)
+	void OnToggleLaser(bool NewLaserStatus, class UGripMotionControllerComponent* UsingHand);
 
-	UFUNCTION(Category= "Light", BlueprintCallable)
+	UFUNCTION(Category= "Laser", BlueprintCallable)
 	virtual bool IsLaserOn() const {return bIsLaserOn;}
 
+	UFUNCTION(Category= "Laser", BlueprintImplementableEvent)
+	void PostLaserTrace(const FHitResult& Hit);
 
 };
