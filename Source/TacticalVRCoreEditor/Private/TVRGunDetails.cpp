@@ -26,6 +26,7 @@ void FTVRGunDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 
 	TArray< TWeakObjectPtr< UObject > > Objects;
 	DetailBuilder.GetObjectsBeingCustomized(Objects);
+	TSharedRef<IPropertyHandle> RecompileHelperProp = DetailBuilder.GetProperty(GET_MEMBER_NAME_CHECKED(ATVRGunBase, bForceRecompile));
 	if(Objects.Num() != 1)
 	{
 		// we do not allow multi object editing
@@ -47,7 +48,7 @@ void FTVRGunDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 	{
 		if(AttachPoint)
 		{
-			AddAttachmentRow(Cat, AttachPoint, MyGun.Get());
+			AddAttachmentRow(Cat, AttachPoint, MyGun.Get(), RecompileHelperProp);
 			// we'll look for child attachments.
 			// This is limited to a depth of one. everything else is probably unreasonable and in that case it might be
 			// better to actually solve that in-game.
@@ -60,7 +61,7 @@ void FTVRGunDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 				{
 					if(LoopSubAttachPoint)
 					{
-						AddSubAttachmentRow(Cat, LoopSubAttachPoint, AttachPoint, MyGun.Get());
+						AddSubAttachmentRow(Cat, LoopSubAttachPoint, AttachPoint, MyGun.Get(), RecompileHelperProp);
 					}
 				}
 			}
@@ -98,7 +99,7 @@ UTVRAttachmentPoint* FTVRGunDetails::GetAttachmentPointByName(AActor* Parent, FN
 	return nullptr;
 }
 
-void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, ATVRGunBase* Gun)
+void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, ATVRGunBase* Gun, TSharedRef<IPropertyHandle> RecompileHelperProp)
 {
 	const auto AttachPointName = AttachPoint->GetFName();
 	const int32 i = PopulateAttachmentsArrayFor(AttachPoint);
@@ -118,12 +119,13 @@ void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmen
 
 	FSimpleDelegate ClearDelegate;
 	ClearDelegate.BindLambda(
-		[this, Gun, AttachPointName]()
+		[this, Gun, AttachPointName, RecompileHelperProp]()
 		{
 			const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
 			AttachPoint->SetCurrentAttachmentClass(nullptr);				
 			FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-			PropertyEditorModule.NotifyCustomizationModuleChanged();
+			PropertyEditorModule.NotifyCustomizationModuleChanged();			
+			RecompileHelperProp->SetValue(true);
 		}
 	);
 	Cat.AddCustomRow(FText::FromString(AttachPoint->GetName()))
@@ -166,13 +168,14 @@ void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmen
 				}
 			)
 			.OnSelectionChanged_Lambda(
-				[this, Gun, AttachPointName](AttachmentClassPtr NewValue, ESelectInfo::Type SelectType)
+				[this, Gun, AttachPointName, RecompileHelperProp](AttachmentClassPtr NewValue, ESelectInfo::Type SelectType)
 				{
 					const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
 					AttachPoint->SetCurrentAttachmentClass(*NewValue);
 					// DetailBuilder.ForceRefreshDetails();
 					FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 					PropertyEditorModule.NotifyCustomizationModuleChanged();
+					RecompileHelperProp->SetValue(true);
 				}
 			)
 			[
@@ -205,7 +208,7 @@ void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmen
 }
 
 void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint,
-	UTVRAttachmentPoint* ParentPoint, ATVRGunBase* Gun)
+	UTVRAttachmentPoint* ParentPoint, ATVRGunBase* Gun, TSharedRef<IPropertyHandle> RecompileHelperProp)
 {
 	const auto AttachPointName = AttachPoint->GetFName();
 	const auto ParentPointName = ParentPoint->GetFName();
@@ -230,7 +233,7 @@ void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttach
 
 	FSimpleDelegate ClearDelegate;
 	ClearDelegate.BindLambda(
-		[this, Gun, ParentPointName, AttachPointName]()
+		[this, Gun, ParentPointName, AttachPointName, RecompileHelperProp]()
 		{
 			const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
 			if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
@@ -239,6 +242,7 @@ void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttach
 				AttachPoint->SetCurrentAttachmentClass(nullptr);				
 				FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 				PropertyEditorModule.NotifyCustomizationModuleChanged();
+				RecompileHelperProp->SetValue(true);
 			}
 		}
 	);
@@ -282,7 +286,7 @@ void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttach
 				}
 			)
 			.OnSelectionChanged_Lambda(
-				[this, Gun, AttachPointName, ParentPointName](AttachmentClassPtr NewValue, ESelectInfo::Type SelectType)
+				[this, Gun, AttachPointName, ParentPointName, RecompileHelperProp](AttachmentClassPtr NewValue, ESelectInfo::Type SelectType)
 				{
 					const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
 					if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
@@ -292,6 +296,7 @@ void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttach
 						// DetailBuilder.ForceRefreshDetails();
 						FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 						PropertyEditorModule.NotifyCustomizationModuleChanged();
+						RecompileHelperProp->SetValue(true);
 					}
 				}
 			)

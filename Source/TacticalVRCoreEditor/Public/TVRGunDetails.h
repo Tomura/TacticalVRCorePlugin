@@ -31,6 +31,6 @@ public:
 
 	virtual class UTVRAttachmentPoint* GetAttachmentPointByName(AActor* Parent, FName AttachPointName) const;
 
-	virtual void AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, class ATVRGunBase* Gun);
-	virtual void AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, UTVRAttachmentPoint* ParentPoint, class ATVRGunBase* Gun);
+	virtual void AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, class ATVRGunBase* Gun, TSharedRef<IPropertyHandle> RecompileHelperProp);
+	virtual void AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, UTVRAttachmentPoint* ParentPoint, class ATVRGunBase* Gun, TSharedRef<IPropertyHandle> RecompileHelperProp);
 };

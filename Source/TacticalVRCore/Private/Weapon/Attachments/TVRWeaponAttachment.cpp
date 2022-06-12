@@ -29,14 +29,7 @@ ATVRWeaponAttachment::ATVRWeaponAttachment(const FObjectInitializer& OI) : Super
 void ATVRWeaponAttachment::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-
-	// if there are attachment points we might need to call their construction logic
-	TArray<UTVRAttachmentPoint*> AttachPoints;
-	GetComponents<UTVRAttachmentPoint>(AttachPoints);
-	for(UTVRAttachmentPoint* LoopPoint: AttachPoints)
-	{
-		LoopPoint->OnConstruction();
-	}
+	InitAttachments();
 }
 
 
@@ -44,7 +37,8 @@ void ATVRWeaponAttachment::OnConstruction(const FTransform& Transform)
 void ATVRWeaponAttachment::BeginPlay()
 {
 	Super::BeginPlay();
-
+	InitAttachments();
+	
 	TArray<UStaticMeshComponent*> Meshes;
 	GetComponents<UStaticMeshComponent>(Meshes);
 	for(UStaticMeshComponent* TestMesh: Meshes)
@@ -58,8 +52,19 @@ void ATVRWeaponAttachment::BeginPlay()
 	GetWorldTimerManager().SetTimerForNextTick(this, &ATVRWeaponAttachment::FindAttachPointAndAttach);
 }
 
+void ATVRWeaponAttachment::InitAttachments()
+{
+	// if there are attachment points we might need to call their construction logic
+	TArray<UTVRAttachmentPoint*> AttachPoints;
+	GetComponents<UTVRAttachmentPoint>(AttachPoints);
+	for(UTVRAttachmentPoint* LoopPoint: AttachPoints)
+	{
+		LoopPoint->OnConstruction();
+	}
+}
+
 void ATVRWeaponAttachment::OnOwnerGripped(UGripMotionControllerComponent* GrippingHand,
-	const FBPActorGripInformation& GripInfo)
+                                          const FBPActorGripInformation& GripInfo)
 {
 	OnOwnerGripped_Implementation(GrippingHand, GripInfo);
 }
@@ -163,24 +168,35 @@ FName ATVRWeaponAttachment::GetPrefixedSocketName(USceneComponent* SocketComp) c
 void ATVRWeaponAttachment::SetVariant(uint8 Variant)
 {
 	SelectedVariant = Variant;
-	OnVariantChanged(SelectedVariant, SelectedColor);
+	NativeOnVariantChanged(SelectedVariant, SelectedColor);
 }
 
 void ATVRWeaponAttachment::SetColorVariant(uint8 Variant)
 {
 	SelectedColor = Variant;
-	OnVariantChanged(SelectedVariant, SelectedColor);
+	NativeOnVariantChanged(SelectedVariant, SelectedColor);
+}
+
+void ATVRWeaponAttachment::NativeOnVariantChanged(uint8 Variant, uint8 ColorVariant)
+{
+	OnVariantChanged(Variant, ColorVariant);
+	InitAttachments();
+}
+
+void ATVRWeaponAttachment::NativeOnRailTypeChanged(ETVRRailType RailType, uint8 CustomType)
+{
+	OnRailTypeChanged(RailType, CustomType);
+	NativeOnVariantChanged(SelectedVariant, SelectedColor);
 }
 
 TSubclassOf<ATVRWeaponAttachment> ATVRWeaponAttachment::GetReplacementClass_Implementation(
-	ERailType RailType,
+	ETVRRailType RailType,
 	uint8 CustomType) const
 {
 	return this->GetClass();
 }
 
-void ATVRWeaponAttachment::SetRailType(ERailType RailType, uint8 CustomType)
+void ATVRWeaponAttachment::SetRailType(ETVRRailType RailType, uint8 CustomType)
 {
-	OnRailTypeChanged(RailType, CustomType);
-	OnVariantChanged(SelectedVariant, SelectedColor);
+	NativeOnRailTypeChanged(RailType, CustomType);
 }

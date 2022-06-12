@@ -9,7 +9,7 @@
 #include "TVRWeaponAttachment.generated.h"
 
 UENUM(BlueprintType)
-enum class ERailType : uint8
+enum class ETVRRailType : uint8
 {
 	Picatinny,
 	MLok UMETA(DisplayName="M-LOK"),
@@ -67,9 +67,7 @@ public:
 	void SetVariant(uint8 Variant);
 	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
 	void SetColorVariant(uint8 Variant);
-	
-	UFUNCTION(Category = "Weapon Attachment", BlueprintImplementableEvent)
-	void OnVariantChanged(uint8 Variant, uint8 ColorVariant);
+
 
 	
 	
@@ -84,13 +82,12 @@ public:
 	 * @returns A WeaponAttachment class that should replace this one under the given arguments.
 	 */
 	UFUNCTION(Category = "Weapon Attachment", BlueprintNativeEvent)
-	TSubclassOf<ATVRWeaponAttachment> GetReplacementClass(ERailType RailType, uint8 CustomType = 0) const;
-	virtual TSubclassOf<ATVRWeaponAttachment> GetReplacementClass_Implementation(ERailType RailType, uint8 CustomType = 0) const;
+	TSubclassOf<ATVRWeaponAttachment> GetReplacementClass(ETVRRailType RailType, uint8 CustomType = 0) const;
+	virtual TSubclassOf<ATVRWeaponAttachment> GetReplacementClass_Implementation(ETVRRailType RailType, uint8 CustomType = 0) const;
 	
 	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
-	void SetRailType(ERailType RailType, uint8 CustomType = 0);
-	UFUNCTION(Category = "Weapon Attachment", BlueprintImplementableEvent)
-	void OnRailTypeChanged(ERailType RailType, uint8 CustomType = 0);
+	void SetRailType(ETVRRailType RailType, uint8 CustomType = 0);
+	
 
 	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
 	const FText& GetWeaponAttachmentName() const {return WeaponAttachmentName;}
@@ -130,6 +127,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void InitAttachments();
+
 	UFUNCTION()
 	void OnOwnerGripped(class UGripMotionControllerComponent* GrippingHand, const struct FBPActorGripInformation& GripInfo);
 	virtual void OnOwnerGripped_Implementation(class UGripMotionControllerComponent* GrippingHand, const struct FBPActorGripInformation& GripInfo) {}
@@ -137,6 +136,15 @@ protected:
 	void OnOwnerDropped(class UGripMotionControllerComponent* GrippingHand, const struct FBPActorGripInformation& GripInfo, bool bSocketed);
 	virtual void OnOwnerDropped_Implementation(class UGripMotionControllerComponent* GrippingHand, const struct FBPActorGripInformation& GripInfo, bool bSocketed) {}
 
+	virtual void NativeOnVariantChanged(uint8 Variant, uint8 ColorVariant);	
+	virtual void NativeOnRailTypeChanged(ETVRRailType RailType, uint8 CustomType = 0);
+	
+	UFUNCTION(Category = "Weapon Attachment", BlueprintImplementableEvent)
+	void OnVariantChanged(uint8 Variant, uint8 ColorVariant);
+	
+	UFUNCTION(Category = "Weapon Attachment", BlueprintImplementableEvent)
+	void OnRailTypeChanged(ETVRRailType RailType, uint8 CustomType = 0);
+	
 protected:
 	UPROPERTY()
 	TArray<class UStaticMeshComponent*> AttachmentMeshes;

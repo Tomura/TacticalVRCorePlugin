@@ -31,10 +31,6 @@
 			"Name": "VRExpansionPlugin",
 			"Enabled": true
 		},
-		{
-			"Name": "ForceTubeVRForUE4",
-			"Enabled": true
-		},
         {
             "Name": "OpenXRExpansionPlugin",
             "Enabled": true

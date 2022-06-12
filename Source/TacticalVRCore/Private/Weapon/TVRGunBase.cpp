@@ -132,19 +132,30 @@ ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
 	BoltMesh = nullptr;
 	SelectorSound = nullptr;
 	SelectorAudio = nullptr;
+
+	bForceRecompile = false;
 }
 
 void ATVRGunBase::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
+	
+	OnColorVariantChanged(ColorVariant);
 	InitAttachmentPoints();
+
+	if(bForceRecompile)
+	{
+		bForceRecompile = false;
+	}
 }
 
 void ATVRGunBase::BeginPlay()
 {
     Super::BeginPlay();
-	
+
+	OnColorVariantChanged(ColorVariant);
 	InitAttachmentPoints();
+	
 	InitChargingHandle();
 
 	if(GetFiringComponent())
@@ -195,11 +206,23 @@ void ATVRGunBase::InitAttachmentPoints()
 	}
 	
 	const auto Sight = GetAttachment<AWPNA_Sight>();
-	const bool bFoldSights = (Sight != nullptr);
-	FoldSights(bFoldSights);
-	if(const auto Barrel = GetAttachment<AWPNA_Barrel>())
+	if(Sight)
 	{
-		Barrel->OnFoldSights(bFoldSights);
+		FoldSights(Sight->bFoldIronSights);
+		HideRearSight(Sight->bHideRearSight);
+		if(const auto Barrel = GetAttachment<AWPNA_Barrel>())
+		{
+			Barrel->OnFoldSights(Sight->bFoldIronSights);
+		}
+	}
+	else
+	{
+		FoldSights(false);
+		HideRearSight(false);
+		if(const auto Barrel = GetAttachment<AWPNA_Barrel>())
+		{
+			Barrel->OnFoldSights(false);
+		}
 	}
 }
 
@@ -642,6 +665,12 @@ void ATVRGunBase::SetConstraintToOneHanded()
 
 void ATVRGunBase::OnPhysicsHit(AActor* HitActor, AActor* OtherActor, FVector HitVelocity, const FHitResult& Hit)
 {
+}
+
+void ATVRGunBase::SetColorVariant(uint8 newVariant)
+{
+	ColorVariant = newVariant;
+	OnColorVariantChanged(ColorVariant);
 }
 
 void ATVRGunBase::SetBoltMesh(UStaticMeshComponent* NewMesh)

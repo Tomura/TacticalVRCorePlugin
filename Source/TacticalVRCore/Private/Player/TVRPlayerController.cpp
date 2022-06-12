@@ -2,17 +2,18 @@
 
 #include "Player/TVRPlayerController.h"
 
-#include "ForceTubeVRFunctions.h"
 #include "Settings/TVRCoreGameplaySettings.h"
+#include "Components/TVRGunHapticsComponent.h"
 
-void ATVRPlayerController::ClientForceTubeKick_Implementation(uint8 KickStregth, ForceTubeVRChannel Channel)
-{ 
-	UForceTubeVRFunctions::Kick(KickStregth, Channel);
-}
 
 void ATVRPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	// Apply Settings to make sure
 	UTVRCoreGameplaySettings::Get()->ApplySettings();
+}
+
+UTVRGunHapticsComponent* ATVRPlayerController::GetGunHapticsComponent_Implementation() const
+{
+	return FindComponentByClass<UTVRGunHapticsComponent>();
 }

@@ -30,7 +30,7 @@ void AWPNA_Barrel::OnConstruction(const FTransform& Transform)
 		{
 			OnFoldSights(Sight->bFoldIronSights);
 		}
-	}
+	}	
 }
 
 void AWPNA_Barrel::AttachToWeapon(UTVRAttachmentPoint* AttachPoint)

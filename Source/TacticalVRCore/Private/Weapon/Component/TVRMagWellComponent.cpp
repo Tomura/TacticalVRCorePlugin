@@ -440,6 +440,7 @@ void UTVRMagWellComponent::OnMagReleaseReleased(bool bAlternatePress)
 	}
 }
 
+
 void UTVRMagWellComponent::OnOwnerGripReleased(ATVRCharacter* OwningChar,UGripMotionControllerComponent* ReleasingHand)
 {
 	Super::OnOwnerGripReleased(OwningChar, ReleasingHand);
@@ -488,7 +489,7 @@ void UTVRMagWellComponent::GetSplineTransformAtTime(float inProgress, FTransform
 	const USplineComponent* MyMagSpline = GetMagSpline();
 	outTransform = FTransform(
 		UKismetMathLibrary::MakeRotFromXZ(GetForwardVector(), GetUpVector()),
-		MyMagSpline->GetLocationAtTime(0.f, ESplineCoordinateSpace::World));	
+		MyMagSpline->GetLocationAtTime(inProgress, ESplineCoordinateSpace::World));	
 	if(bUseCurve)
 	{	
 		const float Roll = MagRoll.GetRichCurveConst()->Eval(inProgress);

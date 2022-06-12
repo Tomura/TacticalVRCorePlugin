@@ -124,7 +124,6 @@ public:
 	virtual void TickBolt(float DeltaSeconds);
 	virtual void TickHammer(float DeltaSeconds);
 
-
 	virtual void CheckBoltEvents(float PreviousBoltProgress);
 	
 	UFUNCTION()
@@ -448,6 +447,17 @@ public:
 	UFUNCTION(Category="Gun", BlueprintCallable, BlueprintNativeEvent)
 	bool ShouldLockBolt() const;
 	virtual bool ShouldLockBolt_Implementation() const {return false;};
+
+	/** little hack to force the blueprint to recompile */
+	UPROPERTY(Category="Weapon Attachments", EditAnywhere, AdvancedDisplay)
+	bool bForceRecompile;
+
+	
+	UFUNCTION(Category="Gun", BlueprintCallable)
+	void SetColorVariant(uint8 newVariant);
+	
+	UFUNCTION(Category="Gun", BlueprintImplementableEvent)
+	void OnColorVariantChanged(uint8 newVariant);	
 	
 protected:
 
@@ -575,10 +585,12 @@ protected:
 	float BoltProgressHammerCocked;
 	UPROPERTY(Category = "Gun|Bolt", EditDefaultsOnly)
 	bool bHammerDoubleAction;
-
 	
 	UPROPERTY(Category = "Gun", EditDefaultsOnly)
 	FText DisplayName;
+
+	UPROPERTY(Category = "Gun", EditAnywhere)
+	uint8 ColorVariant;
 };
 
 

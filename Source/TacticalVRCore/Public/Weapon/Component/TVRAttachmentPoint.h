@@ -6,7 +6,7 @@
 #include "Components/ChildActorComponent.h"
 #include "TVRAttachmentPoint.generated.h"
 
-enum class ERailType: uint8;
+enum class ETVRRailType: uint8;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponAttachmentAttachedDelegate, class UTVRAttachmentPoint*, AttachmentPoint, class ATVRWeaponAttachment*, NewWeaponAttachment);
 
@@ -22,9 +22,13 @@ public:
 	virtual void BeginPlay() override;
 	virtual void OnRegister() override;
 
-	// virtual void CreateChildActor() override;
-
 	virtual void OnConstruction();
+	
+	// Called every frame
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
+							   FActorComponentTickFunction* ThisTickFunction) override;
+	
+	// virtual void CreateChildActor() override;
 	virtual void CreateChildActor() override;
 	
 	virtual void OnWeaponAttachmentAttached(class ATVRWeaponAttachment* NewAttachment);
@@ -43,20 +47,36 @@ public:
 	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)
 	FORCEINLINE class ATVRWeaponAttachment* GetCurrentAttachment() const;
 
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
 
+	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)
 	virtual class ATVRGunBase* GetGunOwner() const;
+	
+	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)
+	void SetPreferredColorVariant(uint8 NewVariant);
 	
 	UPROPERTY(Category = "WeaponAttachment", EditDefaultsOnly)
 	bool bSpawnAttachmentOnBeginPlay;
+
+	uint8 GetRequestedVariant() const;
+	uint8 GetRequestedColorVariant() const;
 	
 	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
 	uint8 PreferredVariant;
+	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
+	uint8 ColorVariant;
 	
 	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
-	ERailType RailType;
+	bool bOverrideVariant;
+	UPROPERTY(Category = "WeaponAttachment", EditAnywhere, meta=(EditCondition="bOverrideVariant"))
+	uint8 VariantOverride;
+	
+	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
+	bool bOverrideColorVariant;
+	UPROPERTY(Category = "WeaponAttachment", EditAnywhere, meta=(EditCondition="bOverrideColorVariant"))
+	uint8 ColorVariantOverride;
+	
+	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
+	ETVRRailType RailType;
 	UPROPERTY(Category = "WeaponAttachment", EditAnywhere)
 	uint8 CustomRailType;
 

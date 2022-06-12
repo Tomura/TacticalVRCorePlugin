@@ -5,6 +5,8 @@ public class TacticalVRCore : ModuleRules
 	public TacticalVRCore(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		// not needed but I like to have a define that can be used to identify whether a plugin is actually used during build
+		PublicDefinitions.Add("TACTICALVRCORE_PLUGIN=1");
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
@@ -34,7 +36,6 @@ public class TacticalVRCore : ModuleRules
 				"HeadMountedDisplay",
 				"VRExpansionPlugin",
 				"OpenXRExpansionPlugin",
-				"ForceTubeVRForUE4"
 			});
 			
 		

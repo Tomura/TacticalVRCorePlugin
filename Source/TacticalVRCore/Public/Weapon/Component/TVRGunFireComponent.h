@@ -169,9 +169,13 @@ protected:
 	UPROPERTY(Category="Firing", EditDefaultsOnly, meta=(EditCondition="bHasBurst"))
 	uint8 BurstCount;
 	
-	/** Whether or not to initiate a kick with the ForceTubeVR (if connected) */
-	UPROPERTY(Category="Firing|Effects", EditDefaultsOnly)
-	uint8 bUseForceTubeKick : 1;
+	/** Whether or not to initiate a kick with a haptic feedback device at buttstock (like ForceTube) */
+	UPROPERTY(Category="Firing|Haptics", EditDefaultsOnly)
+	uint8 bUseGunHapticsButtstock: 1;
+		
+	/** Whether or not to initiate a kick with haptic feedback device at pistol grip (like Provolver) */
+	UPROPERTY(Category="Firing|Haptics", EditDefaultsOnly)
+	uint8 bUseGunHapticsPistolGrip: 1;
 	
 	/** Timer that tracks when the weapon can fire again */
 	FTimerHandle RefireTimer;

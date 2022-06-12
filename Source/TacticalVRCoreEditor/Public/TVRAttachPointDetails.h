@@ -51,7 +51,7 @@ public:
 	
 	virtual void CustomizeDetails(IDetailLayoutBuilder& DetailBuilder) override
 	{
-		IDetailCategoryBuilder& Cat = DetailBuilder.EditCategory(TEXT("Attach Point"));	
+		IDetailCategoryBuilder& Cat = DetailBuilder.EditCategory(TEXT("Attach Point"));
 		TSharedRef<IPropertyHandle> CurrentAttachmentProp = DetailBuilder.GetProperty(*AttachmentPropName);
 		if(CurrentAttachmentProp->IsValidHandle())
 		{

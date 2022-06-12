@@ -2,9 +2,9 @@
 
 #include "Weapon/Component/TVRGunFireComponent.h"
 
-#include "ForceTubeVRFunctions.h"
 #include "Components/AudioComponent.h"
 #include "Components/DecalComponent.h"
+#include "Components/TVRGunHapticsComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Particles/ParticleSystemComponent.h"
@@ -45,7 +45,9 @@ UTVRGunFireComponent::UTVRGunFireComponent(const FObjectInitializer& OI) : Super
 	LoadedCartridge = nullptr;
 	CurrentFireMode = ETVRFireMode::Single;
 	bCartridgeIsSpent = false;
-	bUseForceTubeKick = false;
+	
+	bUseGunHapticsPistolGrip = false;
+	bUseGunHapticsButtstock = false;
 
 	bIsSuppressed = false;
 	MuzzleFlashOverride = nullptr;
@@ -431,20 +433,18 @@ void UTVRGunFireComponent::LocalSimulateFire()
 			}
 			if(OwnerPC != nullptr)
 			{
-				if(bUseForceTubeKick)
+				if(const auto GunHapctics = OwnerPC->GetGunHapticsComponent())
 				{
-					const uint8 KickPower = GetCurrentFireMode() == ETVRFireMode::Single ? 255 : UForceTubeVRFunctions::TempoToKickPower(GetRefireTime());
-					OwnerPC->ClientForceTubeKick(KickPower, ForceTubeVRChannel::rifle);
+					if(bUseGunHapticsButtstock)
+					{
+						GunHapctics->ClientButtstockKick(255, GetRefireTime());
+					}
+					// todo
+					// if(bUseGunHapticsPistolGrip)
+					// {
+					// 	GunHapctics->ClientPistolKick(255, GetRefireTime(), left or right hand);
+					// }
 				}
-				//
-				// if(HapticFeedback_Fire != nullptr)
-				// {
-				// 	FBPActorGripInformation GripInfo;
-				// 	EBPVRResultSwitch Result;
-				// 	OwnerChar->RightMotionController->GetGripByActor(GripInfo, this, Result);
-				// 	EControllerHand HandType = Result == EBPVRResultSwitch::OnSucceeded ? EControllerHand::Right : EControllerHand::Left;
-				// 	//OwnerPC->PlayHapticEffect(HapticFeedback_Fire, HandType, 1, false);
-				// }
 			}
 		}
 		if(OnSimulateFire.IsBound())

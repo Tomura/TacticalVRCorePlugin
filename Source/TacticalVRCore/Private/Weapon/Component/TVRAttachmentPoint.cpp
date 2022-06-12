@@ -13,7 +13,14 @@ UTVRAttachmentPoint::UTVRAttachmentPoint(const FObjectInitializer& OI) : Super(O
 	PrimaryComponentTick.bCanEverTick = false;
 	CachedCurrentAttachment = nullptr;
 	PreferredVariant = 0;
-	RailType = ERailType::Picatinny;
+	ColorVariant = 0;
+	
+	VariantOverride = 0;
+	ColorVariantOverride = 0;
+	bOverrideVariant = false;
+	bOverrideColorVariant = false;
+	
+	RailType = ETVRRailType::Picatinny;
 	CustomRailType = 0;
 }
 
@@ -63,8 +70,8 @@ void UTVRAttachmentPoint::OnConstruction()
 		if(const auto WPNA = Cast<ATVRWeaponAttachment>(GetChildActor()))
 		{
 			WPNA->SetRailType(RailType, CustomRailType);
-			WPNA->SetVariant(PreferredVariant);
-			WPNA->SetColorVariant(PreferredVariant);
+			WPNA->SetColorVariant(GetRequestedColorVariant());
+			WPNA->SetVariant(GetRequestedVariant());
 		}
 	}
 }
@@ -77,9 +84,9 @@ void UTVRAttachmentPoint::CreateChildActor()
 	{
 		if(auto WPNA = Cast<ATVRWeaponAttachment>(GetChildActor()))
 		{
-			WPNA->SetVariant(PreferredVariant);
-			WPNA->SetColorVariant(PreferredVariant);
 			WPNA->SetRailType(RailType, CustomRailType);
+			WPNA->SetColorVariant(GetRequestedColorVariant());
+			WPNA->SetVariant(GetRequestedVariant());
 		}
 	}
 }
@@ -122,5 +129,24 @@ ATVRGunBase* UTVRAttachmentPoint::GetGunOwner() const
 		return AttachmentOwner->GetGunOwner();
 	}
 	return nullptr;
+}
+
+void UTVRAttachmentPoint::SetPreferredColorVariant(uint8 NewVariant)
+{
+	ColorVariant = NewVariant;
+	if(auto WPNA = Cast<ATVRWeaponAttachment>(GetChildActor()))
+	{
+		WPNA->SetColorVariant(GetRequestedColorVariant());
+	}
+}
+
+uint8 UTVRAttachmentPoint::GetRequestedVariant() const
+{
+	return bOverrideVariant ? VariantOverride : PreferredVariant;
+}
+
+uint8 UTVRAttachmentPoint::GetRequestedColorVariant() const
+{
+	return bOverrideColorVariant ? ColorVariantOverride : ColorVariant;
 }
 
