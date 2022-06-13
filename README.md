@@ -4,6 +4,9 @@ Unreal Engine 4 (and in the future probably 5) plugin for implementing a VR Shoo
 # Example Project
 A functional example project can be found in the following repository: [Tomura / TacticalVRCoreExample](https://github.com/Tomura/TacticalVRCoreExample).
 
+# Branches
+In generally it is recommended to use the 'main' branch. The 'development' branch will contain live updates I do during development of my mainline project, which one can see on my youtube channel. It is usually a lot more unstable, but contains the newest in-development features. At the moment I do not follow a process such as git-flow, because it is a solo project. 
+
 # Installation
 Put the plugin into your projects Plugin directory and activate it via the editor. Please make sure to read the wiki, about the necessary config options, or alternatively modify the plugin source code to fit your configuration.
 
