@@ -86,7 +86,7 @@ int32 FTVRGunDetails::PopulateAttachmentsArrayFor(UTVRAttachmentPoint* AttachPoi
 }
 
 UTVRAttachmentPoint* FTVRGunDetails::GetAttachmentPointByName(AActor* Parent, FName AttachPointName) const
-{	
+{
 	TArray<UTVRAttachmentPoint*> AllAttachPoints;
 	Parent->GetComponents<UTVRAttachmentPoint>(AllAttachPoints);
 	for(const auto& TestPoint: AllAttachPoints)

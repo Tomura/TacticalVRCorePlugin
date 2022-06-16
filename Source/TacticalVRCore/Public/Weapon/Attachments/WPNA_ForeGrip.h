@@ -35,7 +35,7 @@ public:
 	virtual USceneComponent* GetGripSlotComponent() const { return GripSlot; }
 	UFUNCTION(Category = "ForeGrip", BlueprintNativeEvent, BlueprintCallable)
 	class UHandSocketComponent* GetPrimaryHandSocket() const;
-	virtual class UHandSocketComponent* GetPrimaryHandSocket_Implementation() const {return nullptr;}
+	virtual class UHandSocketComponent* GetPrimaryHandSocket_Implementation() const;
 
 	virtual class UHandSocketComponent* GetHandSocket_Implementation(FName SlotName) const override;
 

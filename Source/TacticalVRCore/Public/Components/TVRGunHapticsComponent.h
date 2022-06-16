@@ -7,7 +7,7 @@
 #include "TVRTypes.h"
 #include "TVRGunHapticsComponent.generated.h"
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), Abstract, Blueprintable, BlueprintType )
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent), Abstract, Blueprintable, BlueprintType)
 class TACTICALVRCORE_API UTVRGunHapticsComponent : public UActorComponent
 {
 	GENERATED_BODY()

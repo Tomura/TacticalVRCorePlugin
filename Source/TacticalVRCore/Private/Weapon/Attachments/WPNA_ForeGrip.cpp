@@ -44,6 +44,11 @@ bool AWPNA_ForeGrip::IsGripped() const
 	return false;
 }
 
+UHandSocketComponent* AWPNA_ForeGrip::GetPrimaryHandSocket_Implementation() const
+{
+	return FindComponentByClass<UHandSocketComponent>();
+}
+
 UHandSocketComponent* AWPNA_ForeGrip::GetHandSocket_Implementation(FName SlotName) const
 {
 	if(GetPrimaryHandSocket() && SlotName == GetPrefixedSocketName(GetPrimaryHandSocket()))
