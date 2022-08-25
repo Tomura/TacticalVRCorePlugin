@@ -19,6 +19,8 @@ public:
 	virtual bool SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAttachment> NewClass) override;
 	virtual TSubclassOf<class ATVRWeaponAttachment> GetCurrentAttachmentClass_Internal() const override;
 	virtual void GetAllowedAttachments(TArray<TSubclassOf<class ATVRWeaponAttachment>>& OutAllowedAttachments) const override;
+
+	virtual void OnConstruction() override;
 protected:
 	UPROPERTY(Category = "Attach Point", EditAnywhere)
 	TSubclassOf<class AWPNA_Barrel> CurrentAttachmentClass;

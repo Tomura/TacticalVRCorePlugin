@@ -15,9 +15,6 @@ class TACTICALVRCORE_API AWPNA_ForeGrip : public ATVRWeaponAttachment, public IT
 {
 	GENERATED_BODY()
 
-	UPROPERTY(Category = "Weapon Attachment", BlueprintReadOnly, EditDefaultsOnly, meta = (AllowPrivateAccess = "true"))
-	USceneComponent* GripSlot;
-
 public:
 	AWPNA_ForeGrip(const FObjectInitializer& OI);
 	virtual bool GetGripSlot(
@@ -32,7 +29,6 @@ public:
 	
 	virtual bool IsGripped() const;
 
-	virtual USceneComponent* GetGripSlotComponent() const { return GripSlot; }
 	UFUNCTION(Category = "ForeGrip", BlueprintNativeEvent, BlueprintCallable)
 	class UHandSocketComponent* GetPrimaryHandSocket() const;
 	virtual class UHandSocketComponent* GetPrimaryHandSocket_Implementation() const;

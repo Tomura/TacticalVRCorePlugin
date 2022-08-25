@@ -67,7 +67,7 @@ public:
 	/**
 	 * @returns True if the attached magazine is empty.
 	 */
-	FORCEINLINE virtual bool IsEmpty() const override;
+	virtual bool IsEmpty() const override;
 
 	/**
 	 * @returns number between 0 and 1, where 1 means magazine is fully inserted
@@ -79,7 +79,7 @@ public:
 	/**
 	 * @returns True if Ammo can be fed from the magazine to the weapon
 	 */
-	FORCEINLINE virtual bool CanFeedAmmo() const override;
+	virtual bool CanFeedAmmo() const override;
 
 	virtual TSubclassOf<class ATVRCartridge> TryFeedAmmo() override;
 	

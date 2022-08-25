@@ -85,7 +85,7 @@ int32 FTVRGunDetails::PopulateAttachmentsArrayFor(UTVRAttachmentPoint* AttachPoi
 	return i;
 }
 
-UTVRAttachmentPoint* FTVRGunDetails::GetAttachmentPointByName(AActor* Parent, FName AttachPointName) const
+UTVRAttachmentPoint* FTVRGunDetails::GetAttachmentPointByName(const AActor* Parent, FName AttachPointName) const
 {
 	TArray<UTVRAttachmentPoint*> AllAttachPoints;
 	Parent->GetComponents<UTVRAttachmentPoint>(AllAttachPoints);
@@ -122,7 +122,10 @@ void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmen
 		[this, Gun, AttachPointName, RecompileHelperProp]()
 		{
 			const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
-			AttachPoint->SetCurrentAttachmentClass(nullptr);				
+			
+			const auto GunCDO = GetDefault<ATVRGunBase>(Gun->GetClass());			
+			AttachPoint->SetCurrentAttachmentClass(nullptr);
+			
 			FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 			PropertyEditorModule.NotifyCustomizationModuleChanged();			
 			RecompileHelperProp->SetValue(true);

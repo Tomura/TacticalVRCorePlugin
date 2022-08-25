@@ -23,7 +23,7 @@ public:
 	
 	void Activate();
 	
-	FORCEINLINE bool IsActive() const {return bActive;}
+	bool IsActive() const {return bActive;}
 
 	
 	virtual void ApplySpentCartridgeSettings(TSubclassOf<ATVRCartridge> TemplateType);

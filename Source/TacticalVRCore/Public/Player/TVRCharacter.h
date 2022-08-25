@@ -235,8 +235,8 @@ public:
 	UPROPERTY(Category = Hand, BlueprintReadWrite)
 	UPrimitiveComponent* RightHandGripComponent;
 
-	FORCEINLINE ATVRGraspingHand* GetLeftGraspingHand() const;
-	FORCEINLINE ATVRGraspingHand* GetRightGraspingHand() const;
+	ATVRGraspingHand* GetLeftGraspingHand() const;
+	ATVRGraspingHand* GetRightGraspingHand() const;
 	
 	ATVRGraspingHand* GetGraspingHand(EControllerHand HandType) const;
 	ATVRGraspingHand* GetGraspingHand(UGripMotionControllerComponent* Controller) const;
@@ -294,7 +294,7 @@ protected: // Methods
 	virtual void GripLeftPressed();
 	virtual void GripLeftReleased();	
 
-	FORCEINLINE bool IsLocalGrip(EGripMovementReplicationSettings RepType) const;
+	bool IsLocalGrip(EGripMovementReplicationSettings RepType) const;
 
 	UFUNCTION(Category ="Grip", BlueprintCallable)
 	virtual bool TryGrip(class UGripMotionControllerComponent* Hand, bool bIsLargeGrip);

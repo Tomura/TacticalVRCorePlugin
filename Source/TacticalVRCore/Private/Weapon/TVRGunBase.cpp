@@ -38,7 +38,6 @@
 
 FName ATVRGunBase::PrimarySlotName(TEXT("Primary"));
 FName ATVRGunBase::SecondarySlotName(TEXT("Secondary"));
-FName ATVRGunBase::UnderbarrelSlotName(TEXT("Underbarrel"));
 
 ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
 {
@@ -57,7 +56,6 @@ ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
     
     bReplicates = true;
     bAlwaysRelevant = true;
-    GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Weapon.Gun")));
     GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("GripType.Large")));
 
     GetStaticMeshComponent()->SetCollisionProfileName(COLLISION_WEAPON);

@@ -41,8 +41,8 @@ public:
 	*/
     virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult) override;
 
-	FORCEINLINE virtual bool IsEmpty() const override;
-	FORCEINLINE virtual bool CanFeedAmmo() const override;
+	virtual bool IsEmpty() const override;
+	virtual bool CanFeedAmmo() const override;
 	virtual TSubclassOf<class ATVRCartridge> TryFeedAmmo() override;
 	virtual bool CanBoltLock() const override;
 	
@@ -57,7 +57,7 @@ public:
 	*/
 	virtual bool IsAllowedAmmo(UClass* TestClass) const;
 	virtual bool CanInsertAmmo() const;
-	FORCEINLINE virtual bool IsFull() const;
+	virtual bool IsFull() const;
 	
 protected:
 	

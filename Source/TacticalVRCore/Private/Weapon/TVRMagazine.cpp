@@ -407,6 +407,3 @@ int32 ATVRMagazine::GetDisplayAmmo() const
 	}
 	return FMath::Min(LimitDisplayAmmo, CurrentAmmo);
 }
-
-
-

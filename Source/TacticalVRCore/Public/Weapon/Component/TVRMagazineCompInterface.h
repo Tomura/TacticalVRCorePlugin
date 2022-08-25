@@ -39,14 +39,14 @@ public:
 	UFUNCTION()
 	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
-	FORCEINLINE virtual bool CanFeedAmmo() const {return false;}
+	virtual bool CanFeedAmmo() const {return false;}
 	virtual TSubclassOf<class ATVRCartridge> TryFeedAmmo() {return nullptr;}
 
 	virtual void SetMagazineCollisionProfile(FName NewProfile) {}
 
 	virtual bool CanBoltLock() const {return false;}
 
-	FORCEINLINE virtual bool IsEmpty() const {return true;}
+	virtual bool IsEmpty() const {return true;}
 
 	virtual void OnMagReleasePressed(bool bAlternatePress = false) {}
 	virtual void OnMagReleaseReleased(bool bAlternatePress = false) {}

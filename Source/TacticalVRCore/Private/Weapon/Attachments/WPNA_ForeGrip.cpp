@@ -6,8 +6,6 @@
 
 AWPNA_ForeGrip::AWPNA_ForeGrip(const FObjectInitializer& OI) : Super(OI)
 {
-	GripSlot = CreateDefaultSubobject<USceneComponent>(FName("GripSlotComponent"));
-	GripSlot->SetupAttachment(GetStaticMeshComponent());
 	PrimarySlotGripDistance = 15.f;
 	RecoilModifier = 1.f;
 }

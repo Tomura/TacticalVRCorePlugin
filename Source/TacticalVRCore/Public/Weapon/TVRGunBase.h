@@ -57,7 +57,6 @@ public:
 
 	static FName PrimarySlotName;
 	static FName SecondarySlotName;
-	static FName UnderbarrelSlotName;
 
 protected:
 	
@@ -390,7 +389,9 @@ public:
     	}
     	return nullptr;
     }
-	
+
+	UFUNCTION(Category="Gun", BlueprintImplementableEvent)
+	void OnBarrelChanged(TSubclassOf<class AWPNA_Barrel> NewBarrel);
 
 	UFUNCTION(Category="Gun", BlueprintNativeEvent)
 	void ToggleLaser(UGripMotionControllerComponent* UsingHand);
@@ -576,7 +577,7 @@ protected:
 	float BoltStiffness;
 
 	float BoltProgressSpeed;
-	UPROPERTY(Category = "Gun|Bolt", EditDefaultsOnly, meta=(ClampMin="0.0"))
+	UPROPERTY(Category = "Gun|Bolt", EditDefaultsOnly, BlueprintReadWrite, meta=(ClampMin="0.0"))
 	float BoltStroke;
 
 	float HammerProgress;
