@@ -108,12 +108,14 @@ void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmen
 	BrowseDelegate.BindLambda(
 		[this, Gun, AttachPointName]()
 		{
-			const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
-			FAssetData AssetData = FAssetData(AttachPoint->GetCurrentAttachmentClass());
-			const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-			TArray<FAssetData> AssetList;
-			AssetList.Add(AssetData);
-			ContentBrowserModule.Get().SyncBrowserToAssets(AssetList);
+			if(const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName))
+			{
+				FAssetData AssetData = FAssetData(AttachPoint->GetCurrentAttachmentClass());
+				const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+				TArray<FAssetData> AssetList;
+				AssetList.Add(AssetData);
+				ContentBrowserModule.Get().SyncBrowserToAssets(AssetList);
+			}
 		}
 	);
 
@@ -121,14 +123,14 @@ void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmen
 	ClearDelegate.BindLambda(
 		[this, Gun, AttachPointName, RecompileHelperProp]()
 		{
-			const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
+			if(const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName))
+			{		
+				AttachPoint->SetCurrentAttachmentClass(nullptr);
 			
-			const auto GunCDO = GetDefault<ATVRGunBase>(Gun->GetClass());			
-			AttachPoint->SetCurrentAttachmentClass(nullptr);
-			
-			FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-			PropertyEditorModule.NotifyCustomizationModuleChanged();			
-			RecompileHelperProp->SetValue(true);
+				FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+				PropertyEditorModule.NotifyCustomizationModuleChanged();			
+				RecompileHelperProp->SetValue(true);
+			}
 		}
 	);
 	Cat.AddCustomRow(FText::FromString(AttachPoint->GetName()))
@@ -173,12 +175,14 @@ void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmen
 			.OnSelectionChanged_Lambda(
 				[this, Gun, AttachPointName, RecompileHelperProp](AttachmentClassPtr NewValue, ESelectInfo::Type SelectType)
 				{
-					const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
-					AttachPoint->SetCurrentAttachmentClass(*NewValue);
-					// DetailBuilder.ForceRefreshDetails();
-					FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-					PropertyEditorModule.NotifyCustomizationModuleChanged();
-					RecompileHelperProp->SetValue(true);
+					if(const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName))
+					{
+						AttachPoint->SetCurrentAttachmentClass(*NewValue);
+						// DetailBuilder.ForceRefreshDetails();
+						FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+						PropertyEditorModule.NotifyCustomizationModuleChanged();
+						RecompileHelperProp->SetValue(true);
+					}
 				}
 			)
 			[
@@ -187,10 +191,13 @@ void FTVRGunDetails::AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmen
 				.Text_Lambda(
 					[this, Gun, AttachPointName]()
 					{
-						const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName);
-						const auto CurrentAttachment = AttachPoint->GetCurrentAttachmentClass();
-						const auto ClassAsset = FAssetData(CurrentAttachment);
-						return FText::FromName(ClassAsset.AssetName);
+						if(const auto AttachPoint = GetAttachmentPointByName(Gun, AttachPointName))
+						{
+							const auto CurrentAttachment = AttachPoint->GetCurrentAttachmentClass();
+							const auto ClassAsset = FAssetData(CurrentAttachment);
+							return FText::FromName(ClassAsset.AssetName);
+						}
+						return NSLOCTEXT(LOCTEXT_NAMESPACE, "AttachmentRefInvalid", "Invalid Atachment Ref");
 					}
 				)
 			]
@@ -221,15 +228,19 @@ void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttach
 	BrowseDelegate.BindLambda(
 		[this, Gun, ParentPointName, AttachPointName]()
 		{
-			const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
-			if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
-			{				
-				const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName);
-				FAssetData AssetData = FAssetData(AttachPoint->GetCurrentAttachmentClass());
-				const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
-				TArray<FAssetData> AssetList;
-				AssetList.Add(AssetData);
-				ContentBrowserModule.Get().SyncBrowserToAssets(AssetList);
+			if(const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName))
+			{
+				if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+				{				
+					if(const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName))
+					{
+						FAssetData AssetData = FAssetData(AttachPoint->GetCurrentAttachmentClass());
+						const FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+						TArray<FAssetData> AssetList;
+						AssetList.Add(AssetData);
+						ContentBrowserModule.Get().SyncBrowserToAssets(AssetList);
+					}
+				}
 			}
 		}
 	);
@@ -238,14 +249,18 @@ void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttach
 	ClearDelegate.BindLambda(
 		[this, Gun, ParentPointName, AttachPointName, RecompileHelperProp]()
 		{
-			const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
-			if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+			if(const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName))
 			{
-				const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName);
-				AttachPoint->SetCurrentAttachmentClass(nullptr);				
-				FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-				PropertyEditorModule.NotifyCustomizationModuleChanged();
-				RecompileHelperProp->SetValue(true);
+				if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+				{
+					if(const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName))
+					{					
+						AttachPoint->SetCurrentAttachmentClass(nullptr);				
+						FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+						PropertyEditorModule.NotifyCustomizationModuleChanged();
+						RecompileHelperProp->SetValue(true);
+					}
+				}
 			}
 		}
 	);
@@ -291,15 +306,19 @@ void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttach
 			.OnSelectionChanged_Lambda(
 				[this, Gun, AttachPointName, ParentPointName, RecompileHelperProp](AttachmentClassPtr NewValue, ESelectInfo::Type SelectType)
 				{
-					const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
-					if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+					if(const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName))
 					{
-						const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName);
-						AttachPoint->SetCurrentAttachmentClass(*NewValue);
-						// DetailBuilder.ForceRefreshDetails();
-						FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
-						PropertyEditorModule.NotifyCustomizationModuleChanged();
-						RecompileHelperProp->SetValue(true);
+						if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+						{
+							if(const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName))
+							{							
+								AttachPoint->SetCurrentAttachmentClass(*NewValue);
+								// DetailBuilder.ForceRefreshDetails();
+								FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+								PropertyEditorModule.NotifyCustomizationModuleChanged();
+								RecompileHelperProp->SetValue(true);
+							}
+						}
 					}
 				}
 			)
@@ -309,15 +328,17 @@ void FTVRGunDetails::AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttach
 				.Text_Lambda(
 					[this, Gun, AttachPointName, ParentPointName]()
 					{
-						const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName);
-						if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+						if(const auto ParentPoint = GetAttachmentPointByName(Gun, ParentPointName))
 						{
-							const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName);
-							const auto CurrentAttachment = AttachPoint->GetCurrentAttachmentClass();
-							const auto ClassAsset = FAssetData(CurrentAttachment);
-							return FText::FromName(ClassAsset.AssetName);
+							if(const auto ParentAttachment = ParentPoint->GetCurrentAttachment())
+							{
+								const auto AttachPoint = GetAttachmentPointByName(ParentAttachment, AttachPointName);
+								const auto CurrentAttachment = AttachPoint->GetCurrentAttachmentClass();
+								const auto ClassAsset = FAssetData(CurrentAttachment);
+								return FText::FromName(ClassAsset.AssetName);
+							}
 						}
-						return FText::FromString(FString("INVALID"));
+						return NSLOCTEXT(LOCTEXT_NAMESPACE,"Invalid Pointer","Invalid Pointer");
 					}
 				)
 			]

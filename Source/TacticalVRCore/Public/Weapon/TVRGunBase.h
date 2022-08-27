@@ -208,7 +208,7 @@ public:
      */
 	UFUNCTION(Category = "Gripping", BlueprintNativeEvent, BlueprintCallable)
 	USceneComponent* GetSecondarySlotComponent() const;
-	virtual USceneComponent* GetSecondarySlotComponent_Implementation() const {return nullptr;}
+	virtual USceneComponent* GetSecondarySlotComponent_Implementation() const;
 
     /**
      * Called to start fire (trigger is pressed)
