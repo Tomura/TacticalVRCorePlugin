@@ -29,7 +29,7 @@ public:
 
 	virtual int32 PopulateAttachmentsArrayFor(class UTVRAttachmentPoint* AttachPoint);
 
-	virtual class UTVRAttachmentPoint* GetAttachmentPointByName(AActor* Parent, FName AttachPointName) const;
+	virtual class UTVRAttachmentPoint* GetAttachmentPointByName(const AActor* Parent, FName AttachPointName) const;
 
 	virtual void AddAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, class ATVRGunBase* Gun, TSharedRef<IPropertyHandle> RecompileHelperProp);
 	virtual void AddSubAttachmentRow(IDetailCategoryBuilder& Cat, UTVRAttachmentPoint* AttachPoint, UTVRAttachmentPoint* ParentPoint, class ATVRGunBase* Gun, TSharedRef<IPropertyHandle> RecompileHelperProp);

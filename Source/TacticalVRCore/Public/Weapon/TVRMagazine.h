@@ -8,6 +8,7 @@
 #include "Interfaces/TVRHandSocketInterface.h"
 #include "TVRMagazine.generated.h"
 
+
 /**
  * Gripable Magazine Actor base class. Only children shall be spawned.
  */
@@ -88,7 +89,6 @@ public:
 
     /**
      * Tries to attach the magazine to a weapon
-     * @param Weapon Weapon to attach the magazine to
      * @param AttachComponent Component of the weapon to attach the magazine to
      * @param MagWell Corresponding Magwell
      * @param AttachTransform Transform that the magazines Attach Origin shall be attached to
@@ -139,7 +139,7 @@ public:
     UFUNCTION(Category = "Magazine", BlueprintCallable)
     virtual void SetAmmo(int32 NewAmmo);
 
-	FORCEINLINE int32 GetAmmo() const {return CurrentAmmo;}
+	int32 GetAmmo() const {return CurrentAmmo;}
 
     /**
      * Blueprint Event that is fired whenever the amount of ammo in the magazine has changed.
@@ -205,10 +205,26 @@ public:
 	UFUNCTION(Category = "Magazine", BlueprintNativeEvent, BlueprintCallable)
 	void UpdateRoundInstances();
 	virtual void UpdateRoundInstances_Implementation();
-	
+
+	/**
+	 * @returns the cartridge type of the magazine
+	 */
 	UFUNCTION(Category="Magazine", BlueprintCallable)
 	TSubclassOf<class ATVRCartridge> GetCartridgeType() const {return CartridgeType;}
 
+	/**
+	 * @returns the mag well the magazine is inserted into or null if the magazine is free
+	 */
+	UFUNCTION(Category="Magazine", BlueprintCallable)
+	UTVRMagWellComponent* GetAttachedMagWell()  const { return AttachedMagWell; }
+
+	/**
+	 * Returns a number between 0 adn 1 where 0 means the magazine is free and 1 means the magazine is fully inserted.
+	 * @returns magazine insertion progress
+	 */
+	UFUNCTION(Category="Magazine", BlueprintCallable)
+	float GetInsertProgress()  const { return MagInsertPercentage; }
+	
 	/** Radius of one round */
 	UPROPERTY(Category = "Magazine", EditDefaultsOnly)
 	float RoundRadius;
@@ -260,7 +276,9 @@ public:
 	UPROPERTY(Category = "Magazine", EditDefaultsOnly)
 	TSubclassOf<class ATVRCartridge> CartridgeType;
 
-	FORCEINLINE int32 GetDisplayAmmo() const;
+	int32 GetDisplayAmmo() const;
+
+	
 	
 protected:
 	UPROPERTY()

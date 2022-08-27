@@ -73,29 +73,29 @@ public:
 	virtual void ClosestGripSlotInRange_Implementation(FVector WorldLocation, bool bSecondarySlot, bool& bHadSlotInRange, FTransform& SlotWorldTransform, FName& SlotName, UGripMotionControllerComponent* CallingController, FName OverridePrefix) override;
 	
 	UFUNCTION(Category="Cartridge", BlueprintCallable)
-	FORCEINLINE bool IsBuckshot() const { return bIsBuckshot; }
+	bool IsBuckshot() const { return bIsBuckshot; }
 	
 	UFUNCTION(Category="Cartridge", BlueprintCallable)
-	FORCEINLINE uint8 GetNumBuckshot() const { return NumBucks; }
+	uint8 GetNumBuckshot() const { return NumBucks; }
 	
 	UFUNCTION(Category="Cartridge", BlueprintCallable)
-	FORCEINLINE TSubclassOf<UDamageType> GetDamageType() const { return DamageType; }
+	TSubclassOf<UDamageType> GetDamageType() const { return DamageType; }
 	
 	UFUNCTION(Category="Cartridge", BlueprintCallable)
-	FORCEINLINE float GetBuckshotSpread() const { return BuckshotSpread; }
+	float GetBuckshotSpread() const { return BuckshotSpread; }
 
-	FORCEINLINE class UCapsuleComponent* GetCollisionCapsule() const {return CollisionCapsule;}
-	FORCEINLINE class UAudioComponent* GetHitAudioComponent() const {return HitAudioComponent;}
-
-	UFUNCTION(Category="Cartridge", BlueprintCallable)
-	FORCEINLINE UStaticMesh* GetSpentCartridgeMesh() const {return SpentCartridgeMesh;}
+	class UCapsuleComponent* GetCollisionCapsule() const {return CollisionCapsule;}
+	class UAudioComponent* GetHitAudioComponent() const {return HitAudioComponent;}
 
 	UFUNCTION(Category="Cartridge", BlueprintCallable)
-	FORCEINLINE float GetTraceDistance() const { return TraceDistance; }
+	UStaticMesh* GetSpentCartridgeMesh() const {return SpentCartridgeMesh;}
+
+	UFUNCTION(Category="Cartridge", BlueprintCallable)
+	float GetTraceDistance() const { return TraceDistance; }
 
 	const FImpactParticleData* GetImpactParticle(EPhysicalSurface SurfaceType) const;
 	const FImpactDecalData* GetImpactDecal(EPhysicalSurface SurfaceType) const;
-	FORCEINLINE USoundBase* GetImpactSound() const { return ImpactSound; }
+	USoundBase* GetImpactSound() const { return ImpactSound; }
 	
 	UFUNCTION(Category="Cartridge", BlueprintCallable)
 	float GetBaseDamage() const { return BaseDamage; }

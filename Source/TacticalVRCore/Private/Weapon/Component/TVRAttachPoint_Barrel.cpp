@@ -3,6 +3,7 @@
 
 #include "Weapon/Component/TVRAttachPoint_Barrel.h"
 
+#include "Weapon/TVRGunBase.h"
 #include "Weapon/Attachments/WPNA_Barrel.h"
 
 UTVRAttachPoint_Barrel::UTVRAttachPoint_Barrel(const FObjectInitializer& OI) : Super(OI)
@@ -25,7 +26,7 @@ bool UTVRAttachPoint_Barrel::SetCurrentAttachmentClass(TSubclassOf<ATVRWeaponAtt
 		if(AllowedAttachments.Find(TestClass) != INDEX_NONE)
 		{
 			CurrentAttachmentClass = TestClass;
-			OnConstruction();
+			OnConstruction();			
 			return true;
 		}
 	}
@@ -42,5 +43,15 @@ void UTVRAttachPoint_Barrel::GetAllowedAttachments(TArray<TSubclassOf<ATVRWeapon
 	for(TSubclassOf<AWPNA_Barrel> TestSightClass : AllowedAttachments)
 	{
 		OutAllowedAttachments.Add(TestSightClass);
+	}
+}
+
+void UTVRAttachPoint_Barrel::OnConstruction()
+{
+	Super::OnConstruction();
+	
+	if(GetGunOwner())
+	{
+		GetGunOwner()->OnBarrelChanged(CurrentAttachmentClass);
 	}
 }

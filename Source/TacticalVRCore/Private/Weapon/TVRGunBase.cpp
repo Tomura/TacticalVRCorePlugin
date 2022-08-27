@@ -38,7 +38,6 @@
 
 FName ATVRGunBase::PrimarySlotName(TEXT("Primary"));
 FName ATVRGunBase::SecondarySlotName(TEXT("Secondary"));
-FName ATVRGunBase::UnderbarrelSlotName(TEXT("Underbarrel"));
 
 ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
 {
@@ -57,7 +56,6 @@ ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
     
     bReplicates = true;
     bAlwaysRelevant = true;
-    GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Weapon.Gun")));
     GameplayTags.AddTag(FGameplayTag::RequestGameplayTag(FName("GripType.Large")));
 
     GetStaticMeshComponent()->SetCollisionProfileName(COLLISION_WEAPON);
@@ -477,8 +475,7 @@ bool ATVRGunBase::RequestsSocketing_Implementation(USceneComponent*& ParentToSoc
                                                    FTransform_NetQuantize& RelativeTransform)
 {
 	// primary was released, lets check whether there is a secondary:
-	ATVRCharacter* CharacterOwner = Cast<ATVRCharacter>(GetOwner());
-	if(CharacterOwner)
+	if(const auto CharacterOwner = Cast<ATVRCharacter>(GetOwner()))
 	{
 		TArray<UTVREquipmentPoint*> Slots;
 		CharacterOwner->GetComponents<UTVREquipmentPoint>(Slots);
@@ -914,6 +911,15 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
 	return false;
 }
 
+
+USceneComponent* ATVRGunBase::GetSecondarySlotComponent_Implementation() const
+{
+	if(const auto HandSocket = GetSecondaryHandSocket())
+	{
+		return HandSocket;
+	}
+	return nullptr;
+}
 
 void ATVRGunBase::OnStartFire()
 {

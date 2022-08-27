@@ -6,8 +6,6 @@
 
 AWPNA_ForeGrip::AWPNA_ForeGrip(const FObjectInitializer& OI) : Super(OI)
 {
-	GripSlot = CreateDefaultSubobject<USceneComponent>(FName("GripSlotComponent"));
-	GripSlot->SetupAttachment(GetStaticMeshComponent());
 	PrimarySlotGripDistance = 15.f;
 	RecoilModifier = 1.f;
 }
@@ -42,6 +40,11 @@ bool AWPNA_ForeGrip::IsGripped() const
 		}
 	}
 	return false;
+}
+
+UHandSocketComponent* AWPNA_ForeGrip::GetPrimaryHandSocket_Implementation() const
+{
+	return FindComponentByClass<UHandSocketComponent>();
 }
 
 UHandSocketComponent* AWPNA_ForeGrip::GetHandSocket_Implementation(FName SlotName) const

@@ -45,7 +45,7 @@ public:
 	virtual bool SetCurrentAttachmentClass(TSubclassOf<class ATVRWeaponAttachment> NewClass);
 	
 	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)
-	FORCEINLINE class ATVRWeaponAttachment* GetCurrentAttachment() const;
+	class ATVRWeaponAttachment* GetCurrentAttachment() const;
 
 
 	UFUNCTION(Category = "WeaponAttachment", BlueprintCallable)

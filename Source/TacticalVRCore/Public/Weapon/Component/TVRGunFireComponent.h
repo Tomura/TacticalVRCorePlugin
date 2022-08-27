@@ -201,7 +201,7 @@ protected:
 	 * Provides easier access to the timer manager
 	 * @returns the owner's World Timer Manager
 	 */
-	FORCEINLINE FTimerManager& GetWorldTimerManager() const;
+	FTimerManager& GetWorldTimerManager() const;
 
 	/**
 	 * @returns true if there is a local player controller in the owner chain
@@ -392,14 +392,14 @@ public:
 	UFUNCTION(Category = "Firing", BlueprintCallable)
 	TSubclassOf<class ATVRCartridge> TryEjectCartridge();
 
-	FORCEINLINE float GetRefireCooldownRemaining() const;
-	FORCEINLINE float GetRefireCooldownRemainingPct() const;
+	float GetRefireCooldownRemaining() const;
+	float GetRefireCooldownRemainingPct() const;
 
 	UFUNCTION(Category = "Firing", BlueprintCallable)
-	FORCEINLINE TSubclassOf<ATVRCartridge> GetLoadedCartridge() const { return LoadedCartridge; }
+	TSubclassOf<ATVRCartridge> GetLoadedCartridge() const { return LoadedCartridge; }
 	
 	UFUNCTION(Category = "Firing", BlueprintCallable)
-	FORCEINLINE bool IsCartridgeSpent() const { return bCartridgeIsSpent; }
+	bool IsCartridgeSpent() const { return bCartridgeIsSpent; }
 	
 	virtual float GetDamage() const;
 };

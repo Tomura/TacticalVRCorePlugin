@@ -221,7 +221,6 @@ void UTVRMagWellComponent::HandleMagDrop(float DeltaSeconds)
         else
         {
             OnMagFullyInserted();
-            CurrentMagazine->MagInsertPercentage = 1.f;
         }
     }
 }
@@ -284,6 +283,7 @@ void UTVRMagWellComponent::OnMagFullyInserted()
         FTransform SplineTransform;
     	GetSplineTransformAtTime(0.f, SplineTransform);
         CurrentMagazine->SetMagazineOriginToTransform(TransformSplineToMagazineCoordinates(SplineTransform));
+        CurrentMagazine->MagInsertPercentage = 1.f;
         bIsMagFree = false;
 
     	if(MagAudioComp)
