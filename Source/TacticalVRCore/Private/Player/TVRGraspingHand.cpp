@@ -929,7 +929,6 @@ void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo, bo
 	HandSocketComponent = nullptr;
 	bUseTargetMeshTransform = false;
 	bHasCustomAnimation = false;
-
 }
 
 void ATVRGraspingHand::SetFingerCollisions()

@@ -32,6 +32,7 @@ UTVRMagWellComponent::UTVRMagWellComponent(const FObjectInitializer& OI) : Super
 	bNeedsToBeReleasedByHand = false;
 	bHasMagRelease = false;
 	DefaultMagazineClass = nullptr;
+	MagEjectAcceleration = 0.f;
 }
 
 void UTVRMagWellComponent::BeginPlay()
@@ -195,7 +196,7 @@ void UTVRMagWellComponent::HandleMagDrop(float DeltaSeconds)
             {
                 const float DropAcceleration = GetWorld()->GetGravityZ();
                 MagVelocity = MagVelocity + FVector::UpVector * DropAcceleration * DeltaSeconds;
-                
+                MagVelocity -= GetUpVector() * MagEjectAcceleration * DeltaSeconds; // quick and dirty solution. todo: a better implementation would increment the spline percentage instead
                 const FVector MagLoc = GetCurrentMagazine()->GetAttachOrigin()->GetComponentLocation();
                 const FVector ExternalVelocity = Gun->GetStaticMeshComponent()->GetPhysicsLinearVelocityAtPoint(GetComponentLocation());
                 const FVector DesiredMagLocInternal = MagLoc + (MagVelocity) * DeltaSeconds;

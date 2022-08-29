@@ -218,6 +218,9 @@ protected:
 
     /** Velocity Vector of Attached Magazine */
     FVector MagVelocity;
+	
+	UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditDefaultsOnly)
+	float MagEjectAcceleration;
 
 	UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditDefaultsOnly)
 	bool bUseCurve;

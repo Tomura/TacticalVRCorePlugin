@@ -177,6 +177,9 @@ protected:
 	UPROPERTY(Category="Firing|Haptics", EditDefaultsOnly)
 	uint8 bUseGunHapticsPistolGrip: 1;
 	
+	UPROPERTY(Category="Firing", EditDefaultsOnly, meta=(ClampMin=0.f))
+	float BaseDamageMod;
+	
 	/** Timer that tracks when the weapon can fire again */
 	FTimerHandle RefireTimer;
 
@@ -401,5 +404,5 @@ public:
 	UFUNCTION(Category = "Firing", BlueprintCallable)
 	bool IsCartridgeSpent() const { return bCartridgeIsSpent; }
 	
-	virtual float GetDamage() const;
+	virtual float GetDamage(TSubclassOf<ATVRCartridge> Cartridge) const;
 };

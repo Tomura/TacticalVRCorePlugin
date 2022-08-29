@@ -35,6 +35,7 @@ UTVRGunFireComponent::UTVRGunFireComponent(const FObjectInitializer& OI) : Super
 	
 	RefireTime = 0.1f;
 	RateOfFireRPM = 600;
+	BaseDamageMod = 1.f;
 	
 	bHasSingleShot = true;
 	bHasBurst = false;
@@ -298,9 +299,26 @@ float UTVRGunFireComponent::GetRefireCooldownRemainingPct() const
 	return GetRefireCooldownRemaining()/GetRefireTime();
 }
 
-float UTVRGunFireComponent::GetDamage() const
+float UTVRGunFireComponent::GetDamage(TSubclassOf<ATVRCartridge> Cartridge) const
 {
-	return 40.f;
+	const auto CartridgeCDO = GetDefault<ATVRCartridge>(Cartridge);
+	const float BaseDamage = CartridgeCDO->GetBaseDamage();
+
+	float DamageMod = BaseDamageMod;
+	if(const auto Gun = Cast<ATVRGunBase>(GetOwner()))
+	{
+		TArray<AActor*> ChildActors;
+		Gun->GetAllChildActors(ChildActors, true);
+		for(const auto Child : ChildActors)
+		{
+			if(const auto Attachment = Cast<ATVRWeaponAttachment>(Child))
+			{
+				DamageMod *= Attachment->GetDamageModifier();
+			}
+		}
+	}
+	
+	return BaseDamage * DamageMod;
 }
 
 
@@ -600,7 +618,7 @@ void UTVRGunFireComponent::ServerReceiveHit_Implementation(const FHitResult& Hit
 		ATVRCharacter* MyChar = Cast<ATVRCharacter>(GetOwner());		
 		UGameplayStatics::ApplyPointDamage(
 			Hit.GetActor(),
-			GetDamage(),
+			GetDamage(Cartridge),
 			Hit.TraceEnd-Hit.TraceStart, Hit,
 			MyChar ? MyChar->GetController() : nullptr,
 			MyChar,
