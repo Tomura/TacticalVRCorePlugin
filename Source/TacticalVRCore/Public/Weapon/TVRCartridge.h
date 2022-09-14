@@ -100,6 +100,14 @@ public:
 	UFUNCTION(Category="Cartridge", BlueprintCallable)
 	float GetBaseDamage() const { return BaseDamage; }
 
+	UFUNCTION(Category="Cartridge", BlueprintCallable)
+	USoundBase* GetFlyBySound() const { return FlyBySound; }
+	UFUNCTION(Category="Cartridge", BlueprintCallable)
+	float GetFlyByVolume(const float Dist) const;
+	UFUNCTION(Category="Cartridge", BlueprintCallable)
+	float GetFlyByThresholdDistance() const {return FlyByThresholdDistance;}
+	
+
 public:
 	UPROPERTY(Category="Cartridge", BlueprintReadWrite)
 	bool bIsSpent;
@@ -136,6 +144,15 @@ protected:
 	
 	UPROPERTY(Category="Firing", EditDefaultsOnly)
 	USoundBase* ImpactSound;
+
+	UPROPERTY(Category="Firing", EditDefaultsOnly)
+	USoundBase* FlyBySound;
+
+	UPROPERTY(Category="Firing", EditDefaultsOnly)
+	FRuntimeFloatCurve FlyBySoundVolume;
+	
+	UPROPERTY(Category="Firing", EditDefaultsOnly)
+	float FlyByThresholdDistance;
 
 	UPROPERTY(Category="Firing", EditDefaultsOnly)
 	float BaseDamage;

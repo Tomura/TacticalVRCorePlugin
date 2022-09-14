@@ -4,18 +4,24 @@
 
 #include "TacticalCollisionProfiles.h"
 #include "Components/ArrowComponent.h"
+#include "Components/AudioComponent.h"
 #include "Weapon/TVRCartridge.h"
+#include "Weapon/TVRGunBase.h"
 #include "Weapon/TVRSpentCartridge.h"
-#include "Weapon/Component/TVRGunFireComponent.h"
+#include "Weapon/Component/TVRMagazineCompInterface.h"
 
 UTVREjectionPort::UTVREjectionPort(const FObjectInitializer& OI) : Super(OI)
 {
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.bCanEverTick = false;
+	
 	EjectionDir = FTransform(
 		FRotator(13.f, 62.f, 0.f),
 		FVector(2.f, 4.f, 1.f)
 	);
 	InitBoxExtent(FVector(4.f, 1.5f, 1.5f));
 	SetCollisionProfileName(COLLISION_MAGAZINE_INSERT, false);
+	// SetGenerateOverlapEvents(true);
 	
 	CartridgePoolSize = 20;
 	bAllowChamberload = false;
@@ -27,16 +33,34 @@ UTVREjectionPort::UTVREjectionPort(const FObjectInitializer& OI) : Super(OI)
 void UTVREjectionPort::BeginPlay()
 {
 	Super::BeginPlay();
-
 	PopulateCartridgePool();
+	OnComponentBeginOverlap.AddDynamic(this, &UTVREjectionPort::OnBeginOverlap);
+	const auto MagComp = GetOwner()->FindComponentByClass<UTVRMagazineCompInterface>();
+	LinkMagComp(MagComp);
+
+	if(EjectSound && EjectAudioComp == nullptr)
+	{
+		EjectAudioComp = NewObject<UAudioComponent>(this, FName(TEXT("EjectAudio")));
+		EjectAudioComp->bAutoActivate = false;
+		EjectAudioComp->SetSound(EjectSound);
+		EjectAudioComp->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	}
 }
 
 void UTVREjectionPort::OnComponentDestroyed(bool bDestroyingHierarchy)
 {
 	Super::OnComponentDestroyed(bDestroyingHierarchy);
+
+	if(EjectAudioComp && !EjectAudioComp->IsPendingKill())
+	{
+		EjectAudioComp->DestroyComponent();
+		EjectAudioComp = nullptr;
+	}
+	
 	if(EjectionArrow)
 	{
 		EjectionArrow->DestroyComponent();
+		EjectionArrow = nullptr;
 	}
 
 	bDoNotRespawnPool = true;
@@ -102,6 +126,21 @@ void UTVREjectionPort::PostEditUndo()
 
 #endif
 
+void UTVREjectionPort::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if(OtherActor == nullptr)
+	{
+		return;
+	}
+	if(const auto Cartridge = Cast<ATVRCartridge>(OtherActor))
+	{
+		if(Cartridge->VRGripInterfaceSettings.bIsHeld)
+		{
+			TryLoadChamber(Cartridge);
+		}
+	}
+}
 
 void UTVREjectionPort::PopulateCartridgePool()
 {
@@ -182,6 +221,14 @@ ATVRCartridge* UTVREjectionPort::SpawnEjectedCartridge(TSubclassOf<ATVRCartridge
 			NewCartridge->GetStaticMeshComponent()->SetPhysicsLinearVelocity(EjectDir * EjectImpulse, false);
 			NewCartridge->GetStaticMeshComponent()->SetPhysicsAngularVelocityInDegrees(
 				EjectionTransform.TransformVector(FVector::UpVector) * EjectRotImpulse, false);
+
+			if(EjectAudioComp)
+			{
+				EjectAudioComp->Stop();
+				EjectAudioComp->SetBoolParameter(FName(TEXT("Insert")), false);
+				EjectAudioComp->Play();
+			}
+			
 			return NewCartridge;
 		}
 	}
@@ -201,6 +248,12 @@ void UTVREjectionPort::OnPooledCartridgeDestroyed(AActor* PooledCatridge)
 	}
 }
 
+void UTVREjectionPort::LinkMagComp(UTVRMagazineCompInterface* MagInterface)
+{
+	AllowedCatridges.Empty();
+	MagInterface->GetAllowedCatridges(AllowedCatridges);
+}
+
 void UTVREjectionPort::TryLoadChamber(ATVRCartridge* Cartridge)
 {
 	if(!bAllowChamberload)
@@ -210,14 +263,20 @@ void UTVREjectionPort::TryLoadChamber(ATVRCartridge* Cartridge)
 
 	if(GetOwner())
 	{
-		TArray<UTVRGunFireComponent*> FiringComps;
-		GetOwner()->GetComponents<UTVRGunFireComponent>(FiringComps);
-		if(FiringComps.Num() > 0)
+		if(const auto Gun = Cast<ATVRGunBase>(GetOwner()))
 		{
-			const auto FiringComp = FiringComps[0];
-			if(FiringComp && FiringComp->GetLoadedCartridge() == nullptr)
+			if(Gun->IsBoltOpen() && AllowedCatridges.Find(Cartridge->GetClass()) != INDEX_NONE)
 			{
-				// we still need to check if the cartridge is allowed
+				if(Gun->TryChamberNewRound(Cartridge->GetClass()))
+				{
+					if(EjectAudioComp)
+					{
+						EjectAudioComp->Stop();
+						EjectAudioComp->SetBoolParameter(FName(TEXT("Insert")), true);
+						EjectAudioComp->Play();
+					}
+					Cartridge->Destroy();
+				}
 			}
 		}
 	}

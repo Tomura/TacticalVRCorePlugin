@@ -318,6 +318,9 @@ protected:
     
 	void LocalSimulateHit(const FHitResult& Hit, TSubclassOf<class ATVRCartridge> Cartridge = nullptr);
 
+	void SimulateFlyBy(const FVector_NetQuantize& Origin, const FVector_NetQuantize& Target, TSubclassOf<class ATVRCartridge> Cartridge);
+	void LocalSimulateFlyBy(const FVector_NetQuantize& Origin, const FVector_NetQuantize& Target, TSubclassOf<class ATVRCartridge> Cartridge);
+
 	void SpawnImpactSound(const FHitResult& Hit, USoundBase* Sound);
 public:
 	/**

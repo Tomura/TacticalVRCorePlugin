@@ -57,4 +57,6 @@ public:
 	virtual float GetAmmoInsertProgress() {return 0;}
 
 	virtual void OnOwnerGripReleased(class ATVRCharacter* OwningChar, class UGripMotionControllerComponent*);
+
+	virtual void GetAllowedCatridges(TArray<TSubclassOf<class ATVRCartridge>>& OutCartridges) const;
 };

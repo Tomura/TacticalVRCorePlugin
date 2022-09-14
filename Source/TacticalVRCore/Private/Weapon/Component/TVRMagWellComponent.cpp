@@ -559,6 +559,15 @@ ATVRMagazine* UTVRMagWellComponent::SpawnMagazineAttached(TSubclassOf<ATVRMagazi
 	return nullptr;
 }
 
+void UTVRMagWellComponent::GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const
+{
+	for(const auto MagClass : AllowedMagazines)
+	{
+		const auto MagCDO = GetDefault<ATVRMagazine>(MagClass);
+		OutCartridges.AddUnique(MagCDO->CartridgeType);
+	}
+}
+
 void UTVRMagWellComponent::StartInsertMagazine(ATVRMagazine* MagToInsert)
 {
 	ATVRGunBase* Gun = GetGunOwner();
