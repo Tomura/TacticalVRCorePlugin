@@ -58,6 +58,8 @@ public:
 	virtual bool IsAllowedAmmo(UClass* TestClass) const;
 	virtual bool CanInsertAmmo() const;
 	virtual bool IsFull() const;
+
+	virtual void GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const override;
 	
 protected:
 	

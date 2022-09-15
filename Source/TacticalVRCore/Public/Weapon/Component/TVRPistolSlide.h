@@ -7,6 +7,9 @@
 #include "Weapon/Component/TVRChargingHandleInterface.h"
 #include "TVRPistolSlide.generated.h"
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FProgressChangeDelegate, class UTVRPistolSlide*, Slide, float, Progress);
+
 /**
  * 
  */
@@ -48,6 +51,10 @@ public:
 
 	virtual void PlaySlideBackSound();
 	virtual void PlaySlideCloseSound();
+
+	UPROPERTY(Category = "ChargingHandle", BlueprintAssignable)
+	FProgressChangeDelegate EventOnProgressChange;
+	
 protected:
 
 	UFUNCTION()

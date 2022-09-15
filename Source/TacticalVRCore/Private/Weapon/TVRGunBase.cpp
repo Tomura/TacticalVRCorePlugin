@@ -277,7 +277,7 @@ void ATVRGunBase::TickBolt(float DeltaSeconds)
 		
 		if(PrevBoltMovePct <= (1.f - BoltProgressFeedRound) && BoltMovePct > (1.f - BoltProgressFeedRound))
 		{
-			TryChamberNewRound();
+			TryFeedRoundFromMagazine();
 		}
 
 		if(BoltProgress <= 0.f) // unlikely to happen, but just to make sure, we reset value on bolt closure
@@ -373,7 +373,7 @@ void ATVRGunBase::CheckBoltEvents(float PreviousBoltProgress)
 		
 	if(PreviousBoltProgress >= BoltProgressFeedRound && BoltProgress < BoltProgressFeedRound)
 	{
-		TryChamberNewRound();
+		TryFeedRoundFromMagazine();
 	}
 }
 
@@ -896,12 +896,15 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
             }
             if (bHandSwapToPrimaryGripSlot)
             {
-                ATVRCharacter* MyChar = Cast<ATVRCharacter>(SavedSecondaryHand->GetOwner());
-                if(MyChar)
+                if(const auto MyChar = Cast<ATVRCharacter>(SavedSecondaryHand->GetOwner()))
                 {
                     // FTransform SocketTransformWS = GetPrimaryHandSocket()->GetHandSocketTransform(SavedSecondaryHand.Get());
                 	const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SlotTransform);
-                    SavedSecondaryHand->GripObjectByInterface(this, RelativeSocketTransform, true, EName::NAME_None, PrimarySlotName, true);
+                    SavedSecondaryHand->GripObjectByInterface(
+                    	this, RelativeSocketTransform, true,
+                    	EName::NAME_None,
+                    	PrimarySlotName,
+                    	true);
                 	return true;
                 }
             }
@@ -1184,26 +1187,34 @@ void ATVRGunBase::EjectRound(bool bSpent)
     }
 }
 
-bool ATVRGunBase::TryChamberNewRound()
+bool ATVRGunBase::TryFeedRoundFromMagazine()
 {
-    if(!GetFiringComponent()->HasRoundLoaded() && GetMagInterface())
+	if(!GetFiringComponent()->HasRoundLoaded() && GetMagInterface())
+	{
+		if(const auto NewCartridge = GetMagInterface()->TryFeedAmmo())
+		{
+			return TryChamberNewRound(NewCartridge);
+		}
+	}
+	return false;
+}
+
+bool ATVRGunBase::TryChamberNewRound(TSubclassOf<ATVRCartridge> NewCartridge)
+{
+    if(FiringComponent->TryLoadCartridge(NewCartridge))
     {
-    	const auto NewCartridge = GetMagInterface()->TryFeedAmmo();
-    	if(FiringComponent->TryLoadCartridge(NewCartridge))
+    	if(LoadedBullet)
     	{
-    		if(LoadedBullet)
+    		auto const CartridgeCDO = NewCartridge->GetDefaultObject<ATVRCartridge>();
+    		UStaticMesh* RoundMesh = CartridgeCDO->GetStaticMeshComponent()->GetStaticMesh();
+    		if(RoundMesh != LoadedBullet->GetStaticMesh())
     		{
-    			auto const CartridgeCDO = NewCartridge->GetDefaultObject<ATVRCartridge>();
-    			UStaticMesh* RoundMesh = CartridgeCDO->GetStaticMeshComponent()->GetStaticMesh();
-    			if(RoundMesh != LoadedBullet->GetStaticMesh())
-    			{
-    				LoadedBullet->SetStaticMesh(RoundMesh);
-    			}
-    			LoadedBullet->SetVisibility(true);
+    			LoadedBullet->SetStaticMesh(RoundMesh);
     		}
-    		OnChamberRound();
-    		return true;
+    		LoadedBullet->SetVisibility(true);
     	}
+    	OnChamberRound();
+    	return true;
     }
     return false;
 }

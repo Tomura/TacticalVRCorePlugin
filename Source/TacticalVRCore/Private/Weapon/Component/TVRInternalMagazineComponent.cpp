@@ -61,6 +61,11 @@ bool UTVRInternalMagazineComponent::IsFull() const
 	return InsertedAmmo.Num() >= Capacity;
 }
 
+void UTVRInternalMagazineComponent::GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const
+{
+	OutCartridges.Append(CompatibleAmmo);
+}
+
 void UTVRInternalMagazineComponent::BeginPlay()
 {
 	Super::BeginPlay();

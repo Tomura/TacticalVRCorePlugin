@@ -34,6 +34,7 @@ ATVRCartridge::ATVRCartridge(const FObjectInitializer& OI) : Super(OI)
 	SpentCartridgeMesh = nullptr;
 	bIsSpent = false;
 	TraceDistance = 5000.f;
+	FlyByThresholdDistance = 150.f;
 }
 
 // Called when the game starts or when spawned
@@ -111,5 +112,10 @@ const FImpactDecalData* ATVRCartridge::GetImpactDecal(EPhysicalSurface SurfaceTy
 	}
 	// there's nothing setup
 	return nullptr;
+}
+
+float ATVRCartridge::GetFlyByVolume(const float Dist) const
+{
+	return FlyBySoundVolume.GetRichCurveConst()->Eval(Dist);
 }
 

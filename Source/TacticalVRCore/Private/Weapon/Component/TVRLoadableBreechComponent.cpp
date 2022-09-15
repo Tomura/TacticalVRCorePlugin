@@ -308,6 +308,11 @@ bool ULoadableBreechComponent::IsAllowedAmmo(TSubclassOf<ATVRCartridge> Cartridg
 	return AllowedCartridges.Find(CartridgeClass) != INDEX_NONE;
 }
 
+void ULoadableBreechComponent::GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const
+{
+	OutCartridges.Append(AllowedCartridges);
+}
+
 void ULoadableBreechComponent::BeginInsertCartridge(ATVRCartridge* CartridgeToInsert)
 {
 	if(CartridgeToInsert->VRGripInterfaceSettings.bIsHeld)

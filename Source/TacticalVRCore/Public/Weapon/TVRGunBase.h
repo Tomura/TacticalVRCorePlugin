@@ -317,8 +317,10 @@ public:
 	virtual void EjectRound(bool bSpent=true);
 	UFUNCTION(Category = "Gun", BlueprintImplementableEvent)
 	void OnEjectRound(bool bSpent, TSubclassOf<class ATVRCartridge> CartridgeType);
+
+	virtual bool TryFeedRoundFromMagazine();
 	
-	virtual bool TryChamberNewRound();
+	virtual bool TryChamberNewRound(TSubclassOf<ATVRCartridge> NewCartridge);
 	UFUNCTION(Category = "Gun", BlueprintImplementableEvent)
 	void OnChamberRound();
 
@@ -459,6 +461,10 @@ public:
 	
 	UFUNCTION(Category="Gun", BlueprintImplementableEvent)
 	void OnColorVariantChanged(uint8 newVariant);	
+
+
+	UFUNCTION(Category="Gun", BlueprintCallable)
+	bool IsBoltOpen() const { return BoltProgress >= BoltProgressEjectRound; }
 	
 protected:
 

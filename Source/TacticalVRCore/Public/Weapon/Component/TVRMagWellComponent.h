@@ -189,6 +189,8 @@ public:
 	virtual class ATVRMagazine* SpawnMagazineAttached(TSubclassOf<ATVRMagazine> MagazineClass = nullptr);
 
 	TSubclassOf<ATVRMagazine> DefaultMagazineClass;
+
+	virtual void GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const override;
 	
 protected:
 	virtual void StartInsertMagazine(class ATVRMagazine* MagToInsert);
@@ -218,6 +220,9 @@ protected:
 
     /** Velocity Vector of Attached Magazine */
     FVector MagVelocity;
+	
+	UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditDefaultsOnly)
+	float MagEjectAcceleration;
 
 	UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditDefaultsOnly)
 	bool bUseCurve;

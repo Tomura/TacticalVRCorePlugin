@@ -135,6 +135,8 @@ public:
 	
 	UFUNCTION(Category="Weapon", BlueprintCallable)
 	bool IsAllowedAmmo(TSubclassOf<ATVRCartridge> CartridgeClass) const;
+
+	virtual void GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const override;
 	
 protected:
 	virtual void BeginInsertCartridge(class ATVRCartridge* CartridgeToInsert);

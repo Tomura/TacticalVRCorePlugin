@@ -46,3 +46,7 @@ void UTVRMagazineCompInterface::OnBeginOverlap(UPrimitiveComponent* OverlappedCo
 void UTVRMagazineCompInterface::OnOwnerGripReleased(ATVRCharacter* OwningChar, class UGripMotionControllerComponent*)
 {
 }
+
+void UTVRMagazineCompInterface::GetAllowedCatridges(TArray<TSubclassOf<class ATVRCartridge>>& OutCartridges) const
+{
+}

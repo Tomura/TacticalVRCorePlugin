@@ -21,8 +21,8 @@
 // Sets default values for this component's properties
 UTVRGunFireComponent::UTVRGunFireComponent(const FObjectInitializer& OI) : Super(OI)
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
+	// Set this component to be initialized when the game starts, and to be ticked every frame. You can turn these
+	// features off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 	MuzzleFlashPSC = nullptr;
 	FireAudioComp = nullptr;
@@ -35,6 +35,7 @@ UTVRGunFireComponent::UTVRGunFireComponent(const FObjectInitializer& OI) : Super
 	
 	RefireTime = 0.1f;
 	RateOfFireRPM = 600;
+	BaseDamageMod = 1.f;
 	
 	bHasSingleShot = true;
 	bHasBurst = false;
@@ -298,9 +299,26 @@ float UTVRGunFireComponent::GetRefireCooldownRemainingPct() const
 	return GetRefireCooldownRemaining()/GetRefireTime();
 }
 
-float UTVRGunFireComponent::GetDamage() const
+float UTVRGunFireComponent::GetDamage(TSubclassOf<ATVRCartridge> Cartridge) const
 {
-	return 40.f;
+	const auto CartridgeCDO = GetDefault<ATVRCartridge>(Cartridge);
+	const float BaseDamage = CartridgeCDO->GetBaseDamage();
+
+	float DamageMod = BaseDamageMod;
+	if(const auto Gun = Cast<ATVRGunBase>(GetOwner()))
+	{
+		TArray<AActor*> ChildActors;
+		Gun->GetAllChildActors(ChildActors, true);
+		for(const auto Child : ChildActors)
+		{
+			if(const auto Attachment = Cast<ATVRWeaponAttachment>(Child))
+			{
+				DamageMod *= Attachment->GetDamageModifier();
+			}
+		}
+	}
+	
+	return BaseDamage * DamageMod;
 }
 
 
@@ -353,6 +371,8 @@ void UTVRGunFireComponent::Fire()
 				if(TraceFire(Hits, GetForwardVector() * AmmoCDO->GetTraceDistance()))
 				{
 					ProcessHits(Hits, LoadedCartridge);
+					const auto& LastHit = Hits.Last();
+					SimulateFlyBy(LastHit.TraceStart, LastHit.ImpactPoint, LoadedCartridge);
 				}
 			}
 		}
@@ -600,7 +620,7 @@ void UTVRGunFireComponent::ServerReceiveHit_Implementation(const FHitResult& Hit
 		ATVRCharacter* MyChar = Cast<ATVRCharacter>(GetOwner());		
 		UGameplayStatics::ApplyPointDamage(
 			Hit.GetActor(),
-			GetDamage(),
+			GetDamage(Cartridge),
 			Hit.TraceEnd-Hit.TraceStart, Hit,
 			MyChar ? MyChar->GetController() : nullptr,
 			MyChar,
@@ -678,6 +698,38 @@ void UTVRGunFireComponent::LocalSimulateHit(const FHitResult& Hit, TSubclassOf<A
 	if(OnSimulateHit.IsBound())
 	{
 		OnSimulateHit.Broadcast(Hit, Cartridge);
+	}
+}
+
+void UTVRGunFireComponent::SimulateFlyBy(const FVector_NetQuantize& Origin, const FVector_NetQuantize& Target,
+	TSubclassOf<ATVRCartridge> Cartridge)
+{
+	LocalSimulateFlyBy(Origin, Target, Cartridge);
+}
+
+void UTVRGunFireComponent::LocalSimulateFlyBy(const FVector_NetQuantize& Origin, const FVector_NetQuantize& Target,
+	TSubclassOf<ATVRCartridge> Cartridge)
+{
+	const auto CartridgeCDO = GetDefault<ATVRCartridge>(Cartridge);
+	if(GetOwner() && CartridgeCDO->GetFlyBySound())
+	{
+		if(const auto P = GetOwner()->GetGameInstance()->GetPrimaryPlayerController()->GetPawn())
+		{
+			if(P == GetCharacterOwner())
+			{
+				return;
+			}
+			if(const auto LocalCharacter = Cast<ATVRCharacter>(P))
+			{
+				const FVector HeadLoc = LocalCharacter->GetVRHeadLocation();
+				const FVector NearestLoc = FMath::ClosestPointOnSegment(HeadLoc, Origin, Target);
+				const float MaxDist = CartridgeCDO->GetFlyByThresholdDistance();
+				if(FVector::DistSquared(HeadLoc, NearestLoc) <= MaxDist*MaxDist)
+				{
+					UGameplayStatics::PlaySoundAtLocation(LocalCharacter, CartridgeCDO->GetFlyBySound(), NearestLoc);
+				}
+			}
+		}
 	}
 }
 
