@@ -550,18 +550,33 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 		return;
 	}
 
-	bIsGripping = true;
-	RetrievePoses(GripInfo,false);
-	InitializeAndAttach(GripInfo, false, false);
-
-	StopLerpHand();
-	if(bHasCustomAnimation)		
+	if(bLerpHand)
 	{
-		HandAnimState = bHasCustomAnimation ? EHandAnimState::Custom : EHandAnimState::Dynamic;		
+		FinishedLerpHand();
+		const auto DelayedGripDelegate = FTimerDelegate::CreateUObject(this, &ATVRGraspingHand::OnDelayedGrippedObject, GripInfo);
+		GetWorldTimerManager().SetTimerForNextTick(DelayedGripDelegate);
 	}
-	StartCurl();
-	// BP_StartHandCurl();
-	PostHandleGripped();
+	else
+	{
+		bIsGripping = true;
+	
+		RetrievePoses(GripInfo,false);
+		InitializeAndAttach(GripInfo, false, false);
+
+		StopLerpHand();
+		if(bHasCustomAnimation)		
+		{
+			HandAnimState = bHasCustomAnimation ? EHandAnimState::Custom : EHandAnimState::Dynamic;		
+		}
+		StartCurl();
+		// BP_StartHandCurl();
+		PostHandleGripped();
+	}
+}
+
+void ATVRGraspingHand::OnDelayedGrippedObject(const FBPActorGripInformation GripInfo)
+{
+	OnGrippedObject(GripInfo);
 }
 
 void ATVRGraspingHand::OnDroppedObject(const FBPActorGripInformation& GripInfo, bool bWasSocketed)
@@ -706,7 +721,6 @@ void ATVRGraspingHand::UpdateLerpHand(float DeltaTime)
 		GetSkeletalMeshComponent()->SetRelativeTransform(NewTransform, false, nullptr, ETeleportType::TeleportPhysics);
 		if(HandLerpAlpha == LerpTarget)
 		{
-			bLerpHand = false;
 			FinishedLerpHand();
 		}
 	}
@@ -715,6 +729,7 @@ void ATVRGraspingHand::UpdateLerpHand(float DeltaTime)
 
 void ATVRGraspingHand::FinishedLerpHand()
 {
+	bLerpHand = false;
 	if(bIsPhysicalHand)
 	{
 		SetPhysicalRelativeTransform();

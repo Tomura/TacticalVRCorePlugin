@@ -896,12 +896,15 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
             }
             if (bHandSwapToPrimaryGripSlot)
             {
-                ATVRCharacter* MyChar = Cast<ATVRCharacter>(SavedSecondaryHand->GetOwner());
-                if(MyChar)
+                if(const auto MyChar = Cast<ATVRCharacter>(SavedSecondaryHand->GetOwner()))
                 {
                     // FTransform SocketTransformWS = GetPrimaryHandSocket()->GetHandSocketTransform(SavedSecondaryHand.Get());
                 	const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SlotTransform);
-                    SavedSecondaryHand->GripObjectByInterface(this, RelativeSocketTransform, true, EName::NAME_None, PrimarySlotName, true);
+                    SavedSecondaryHand->GripObjectByInterface(
+                    	this, RelativeSocketTransform, true,
+                    	EName::NAME_None,
+                    	PrimarySlotName,
+                    	true);
                 	return true;
                 }
             }

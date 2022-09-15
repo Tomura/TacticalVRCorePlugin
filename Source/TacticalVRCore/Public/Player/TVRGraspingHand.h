@@ -250,6 +250,9 @@ protected:
 
 	UFUNCTION(Category="Hand", BlueprintCallable)
 	virtual void OnGrippedObject(const struct FBPActorGripInformation& GripInfo);
+	
+	virtual void OnDelayedGrippedObject(const struct FBPActorGripInformation GripInfo);
+	
 	UFUNCTION(Category="Hand", BlueprintCallable)
 	virtual void OnDroppedObject(const struct FBPActorGripInformation& GripInfo, bool bWasSocketed);
 	UFUNCTION(Category="Hand", BlueprintCallable)
