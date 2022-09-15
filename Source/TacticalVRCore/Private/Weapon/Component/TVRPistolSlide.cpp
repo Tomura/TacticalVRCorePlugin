@@ -179,6 +179,10 @@ void UTVRPistolSlide::SetProgress_Implementation(float Value)
 		bIsLocked ? LockedProgress : 0.f,
 		1.f);
 	SetRelativeLocation(InitialRelativeTransform.TransformPositionNoScale(FVector(0.f, -CurrentProgress*MaxDeflection, 0.f)));
+	if(EventOnProgressChange.IsBound())
+	{
+		EventOnProgressChange.Broadcast(this, CurrentProgress);
+	}
 }
 
 
