@@ -884,8 +884,9 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
         		
         			if(bHadSecondarySlotInRange)
         			{
-        				// const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SecondarySlotTransform);
-        				const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SavedSecondaryHand->GetComponentTransform());
+        				const FTransform RelativeSocketTransform =
+        					SavedSecondaryHand->ConvertToControllerRelativeTransform(GetActorTransform());
+        					// GetActorTransform().GetRelativeTransform(SavedSecondaryHand->GetComponentTransform());
         				if(const auto GraspingHand = UTVRFunctionLibrary::GetGraspingHandForController(SavedSecondaryHand))
         				{
         					// prepare for handswap

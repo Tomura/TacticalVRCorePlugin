@@ -344,7 +344,9 @@ void ATVRGraspingHand::InitPhysics()
 		{
 			OwnerChar->RightHandGripComponent = GetRootPhysics();
 		}
-		OwningController->SetCustomPivotComponent(GetRootPhysics());
+		// commenting this solved some problems. Probably not that big of an issue, because the original
+		// pivot component is at the same position in the ideal case.
+		// OwningController->SetCustomPivotComponent(GetRootPhysics()); 
 		GetRootPhysics()->SetWorldTransform(GetPhysicsRoot()->GetComponentTransform());
 		OriginalGripTransform = GetRootPhysics()->GetRelativeTransform();
 	}
@@ -559,13 +561,15 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 	}
 	else
 	{
+		UE_LOG(LogTemp, Log, TEXT("[GraspingHand] %s: Gripping With Lerp: %d"), *this->GetFName().ToString(), GripInfo.bIsLerping);
+		UE_LOG(LogTemp, Log, TEXT("[GraspingHand] %s: Gripping With DisallowLerp: %d"), *this->GetFName().ToString(), GripInfo.AdvancedGripSettings.bDisallowLerping);
 		bIsGripping = true;
 	
 		RetrievePoses(GripInfo,false);
 		InitializeAndAttach(GripInfo, false, false);
 
 		StopLerpHand();
-		if(bHasCustomAnimation)		
+		if(bHasCustomAnimation)
 		{
 			HandAnimState = bHasCustomAnimation ? EHandAnimState::Custom : EHandAnimState::Dynamic;		
 		}
@@ -940,7 +944,7 @@ void ATVRGraspingHand::ForceFreezeHand(bool bFreezePose, bool bFreezeAttachment)
 		HandAnimState = EHandAnimState::Frozen;
 	}
 	bForceFreezePosition = bFreezeAttachment;
-	
+	// GetSkeletalMeshComponent()->GetAnimInstance()->SnapshotPose()
 }
 
 void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo, bool bIsSecondary)
