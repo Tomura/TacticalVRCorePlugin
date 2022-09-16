@@ -57,6 +57,7 @@ ATVRGraspingHand::ATVRGraspingHand(const FObjectInitializer& OI) : Super(OI)
 
 	bIsTriggerTouched = true;
 	TriggerPress = 0.f;
+	PendingHandSwap = ETVRHandSwapType::None;
 }
 
 void ATVRGraspingHand::BeginPlay()
@@ -550,11 +551,11 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 		return;
 	}
 
-	if(bLerpHand)
+	if(bLerpHand) // we need to delay until lerping is finished, and we will force it to finish
 	{
-		FinishedLerpHand();
 		const auto DelayedGripDelegate = FTimerDelegate::CreateUObject(this, &ATVRGraspingHand::OnDelayedGrippedObject, GripInfo);
-		GetWorldTimerManager().SetTimerForNextTick(DelayedGripDelegate);
+		FinishedLerpHand(DelayedGripDelegate);
+		// GetWorldTimerManager().SetTimerForNextTick(DelayedGripDelegate);
 	}
 	else
 	{
@@ -571,6 +572,7 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 		StartCurl();
 		// BP_StartHandCurl();
 		PostHandleGripped();
+		PendingHandSwap = ETVRHandSwapType::None;
 	}
 }
 
@@ -598,6 +600,7 @@ void ATVRGraspingHand::OnDroppedObject(const FBPActorGripInformation& GripInfo, 
 			GetRootPhysics()->SetRelativeTransform(OriginalGripTransform);
 		}
 		StartLerpHand();
+		// StartLerpTimer = GetWorldTimerManager().SetTimerForNextTick(this, ATVRGraspingHand::StartLerpHand);
 
 		if(bIsPhysicalHand)
 		{
@@ -700,6 +703,12 @@ void ATVRGraspingHand::DelayedActivePhysics()
 	SetupPhysicsIfNeededNative(true, true);
 }
 
+void ATVRGraspingHand::DelayedActivePhysics(FTimerDelegate Then)
+{
+	SetupPhysicsIfNeededNative(true, true);
+	GetWorldTimerManager().SetTimerForNextTick(Then);
+}
+
 void ATVRGraspingHand::StartLerpHand()
 {
 	bLerpHand = true;
@@ -734,6 +743,17 @@ void ATVRGraspingHand::FinishedLerpHand()
 	{
 		SetPhysicalRelativeTransform();
 		GetWorldTimerManager().SetTimerForNextTick(this, &ATVRGraspingHand::DelayedActivePhysics);
+	}
+}
+
+void ATVRGraspingHand::FinishedLerpHand(FTimerDelegate Then)
+{
+	bLerpHand = false;
+	if(bIsPhysicalHand)
+	{
+		SetPhysicalRelativeTransform();
+		const auto ActivatePhyiscsDelegate = FTimerDelegate::CreateUObject(this, &ATVRGraspingHand::DelayedActivePhysics, Then);
+		GetWorldTimerManager().SetTimerForNextTick(ActivatePhyiscsDelegate);
 	}
 }
 
@@ -912,6 +932,17 @@ void ATVRGraspingHand::InitializeAndAttach(const FBPActorGripInformation& GripIn
 	SetupPhysicsIfNeededNative(false, false);
 }
 
+void ATVRGraspingHand::ForceFreezeHand(bool bFreezePose, bool bFreezeAttachment)
+{
+	bForceFreezePose = bFreezePose;
+	if(bFreezePose)
+	{
+		HandAnimState = EHandAnimState::Frozen;
+	}
+	bForceFreezePosition = bFreezeAttachment;
+	
+}
+
 void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo, bool bIsSecondary)
 {
 	const bool bIsSlotGrip = bIsSecondary ? GripInfo.SecondaryGripInfo.bIsSlotGrip : GripInfo.bIsSlotGrip;
@@ -919,6 +950,8 @@ void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo, bo
 	{
 		const FName GrippedSlot = bIsSecondary ? GripInfo.SecondaryGripInfo.SecondarySlotName : GripInfo.SlotName;
 		const bool bImplementsInterface = GripInfo.GrippedObject->GetClass()->ImplementsInterface(UTVRHandSocketInterface::StaticClass());
+
+		UE_LOG(LogTemp, Log, TEXT("Retrieve Pose From %s"), *GrippedSlot.ToString());
 		UHandSocketComponent* HandSocket = bImplementsInterface ?
 			ITVRHandSocketInterface::Execute_GetHandSocket(GripInfo.GrippedObject, GrippedSlot) :
 			UHandSocketComponent::GetHandSocketComponentFromObject(GripInfo.GrippedObject, GrippedSlot);
@@ -938,6 +971,13 @@ void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo, bo
 			}
 			bHasCustomAnimation = false;
 			HandSocketComponent = nullptr;
+			return;
+		}
+		if(PendingHandSwap == ETVRHandSwapType::KeepWorldPosition)
+		{
+			bUseTargetMeshTransform = true;
+			const auto ActorTF = GripInfo.GetGrippedActor()->GetActorTransform();
+			TargetMeshTransform = PendingRelativeMeshTransform * ActorTF;
 			return;
 		}
 	}

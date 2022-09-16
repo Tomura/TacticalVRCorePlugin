@@ -11,6 +11,7 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Libraries/TVRFunctionLibrary.h"
 
 #include "Player/TVREquipmentPoint.h"
 #include "Settings/TVRCoreGameplaySettings.h"
@@ -83,6 +84,7 @@ ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
     bIsBoltLocked = false;
 	
     bHandSwapToPrimaryGripSlot = false;
+	HandSwapType = ETVRHandSwapType::KeepWorldPosition;
     bHasLastRoundBoltHoldOpen = true;
 	bDoesCycle = true;
 
@@ -840,11 +842,11 @@ void ATVRGunBase::OnEndSecondaryUsed_Implementation()
 void ATVRGunBase::ReInitSecondary(UGripMotionControllerComponent* GrippingHand,
                                   const FBPActorGripInformation& GripInfo)
 {
-    if(GrippingHand->HasGripAuthority(GripInfo) && SavedSecondaryHand.Get() != GrippingHand)
+    if(GrippingHand->HasGripAuthority(GripInfo) && SavedSecondaryHand != GrippingHand)
     {
-        if(SavedSecondaryHand.IsValid() && SavedSecondaryHand.Get() != nullptr)
+        if(SavedSecondaryHand != nullptr)
         {
-            UGripMotionControllerComponent* OldSecondaryHand = SavedSecondaryHand.Get();
+            UGripMotionControllerComponent* OldSecondaryHand = SavedSecondaryHand;
             const FTransform OldSecondaryTransform = SavedSecondaryHandRelTransform;
             SavedSecondaryHand->DropObject(this, 0, false, FVector::ZeroVector, FVector::ZeroVector);
             GrippingHand->AddSecondaryAttachmentToGrip(GripInfo, OldSecondaryHand, OldSecondaryTransform, true, 0.f, true, SavedSecondarySlotName);
@@ -860,54 +862,71 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
 	// todo: handle hand swap when magazine is grabbed and dropping
     if(GripInfo.SecondaryGripInfo.bHasSecondaryAttachment)
     {
-        UGripMotionControllerComponent* SecondaryHand = Cast<UGripMotionControllerComponent>(GripInfo.SecondaryGripInfo.SecondaryAttachment);
+        const auto SecondaryHand = Cast<UGripMotionControllerComponent>(GripInfo.SecondaryGripInfo.SecondaryAttachment);
         if(SecondaryHand != nullptr && SecondaryHand->HasGripAuthority(this))
         {
             SavedSecondaryHand = SecondaryHand;
             SavedSecondaryHandRelTransform = GripInfo.SecondaryGripInfo.SecondaryRelativeTransform;
         	SavedSecondarySlotName = GripInfo.SecondaryGripInfo.bIsSlotGrip ? GripInfo.SecondaryGripInfo.SecondarySlotName : NAME_None;
+
+        	switch(HandSwapType)
+        	{
+        	case ETVRHandSwapType::KeepWorldPosition:
+        		{
+        			bool bHadSecondarySlotInRange = false;
+        			FTransform SecondarySlotTransform;
+        			FName TempSecondaryName = EName::NAME_None;
         	
-            bool bHadSecondarySlotInRange = false;
-            FTransform SecondarySlotTransform;
-            FName TempSecondaryName = EName::NAME_None;
+        			Execute_ClosestGripSlotInRange(this, SavedSecondaryHand->GetComponentLocation(), true,
+						bHadSecondarySlotInRange, SecondarySlotTransform, TempSecondaryName,
+						SavedSecondaryHand, EName::NAME_None
+					);
+        		
+        			if(bHadSecondarySlotInRange)
+        			{
+        				// const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SecondarySlotTransform);
+        				const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SavedSecondaryHand->GetComponentTransform());
+        				if(const auto GraspingHand = UTVRFunctionLibrary::GetGraspingHandForController(SavedSecondaryHand))
+        				{
+        					// prepare for handswap
+        					// GraspingHand->ForceFreezeHand(true, true);
+        					GraspingHand->PendingHandSwap = ETVRHandSwapType::KeepWorldPosition;
+        					const auto HandTF = GraspingHand->GetSkeletalMeshComponent()->GetComponentTransform();
+        					GraspingHand->PendingRelativeMeshTransform = HandTF * GetActorTransform().Inverse();
+						}
+        				SavedSecondaryHand->GripObjectByInterface(this, RelativeSocketTransform,
+							true, EName::NAME_None,
+							SavedSecondarySlotName, true);
+        				VRGripInterfaceSettings.bAllowMultipleGrips = true;
+        				return true;
+        			}
+        		}
+        		break;
+        	case ETVRHandSwapType::GripPrimary:
+        		{
+        			if(const auto MyChar = Cast<ATVRCharacter>(SavedSecondaryHand->GetOwner()))
+        			{
+        				bool bHadSlotInRange = false;
+        				FName SlotName = EName::NAME_None;        	
+        				FTransform SlotTransform;
         	
-            Execute_ClosestGripSlotInRange(this, SavedSecondaryHand->GetComponentLocation(), true,
-	            bHadSecondarySlotInRange, SecondarySlotTransform, TempSecondaryName,
-	            SavedSecondaryHand.Get(), EName::NAME_None
-            );
-        	
-            bool bHadSlotInRange = false;
-            FName SlotName = EName::NAME_None;        	
-        	FTransform SlotTransform;
-        	
-            Execute_ClosestGripSlotInRange(this, GrippingHand->GetComponentLocation(), false,
-                bHadSlotInRange, SlotTransform, SlotName,
-                SavedSecondaryHand.Get(), EName::NAME_None
-            );
-        	
-            if(bHadSecondarySlotInRange && !bHandSwapToPrimaryGripSlot)
-            {
-                const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SecondarySlotTransform);
-                SavedSecondaryHand->GripObjectByInterface(this, RelativeSocketTransform,
-                	true, EName::NAME_None,
-                	SavedSecondarySlotName, true);
-                VRGripInterfaceSettings.bAllowMultipleGrips = true;
-                return true;
-            }
-            if (bHandSwapToPrimaryGripSlot)
-            {
-                if(const auto MyChar = Cast<ATVRCharacter>(SavedSecondaryHand->GetOwner()))
-                {
-                    // FTransform SocketTransformWS = GetPrimaryHandSocket()->GetHandSocketTransform(SavedSecondaryHand.Get());
-                	const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SlotTransform);
-                    SavedSecondaryHand->GripObjectByInterface(
-                    	this, RelativeSocketTransform, true,
-                    	EName::NAME_None,
-                    	PrimarySlotName,
-                    	true);
-                	return true;
-                }
-            }
+        				Execute_ClosestGripSlotInRange(this, GrippingHand->GetComponentLocation(), false,
+							bHadSlotInRange, SlotTransform, SlotName,
+							SavedSecondaryHand, EName::NAME_None
+						);
+                	
+        				// FTransform SocketTransformWS = GetPrimaryHandSocket()->GetHandSocketTransform(SavedSecondaryHand.Get());
+        				const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SlotTransform);
+        				SavedSecondaryHand->GripObjectByInterface(
+							this, RelativeSocketTransform, true,
+							EName::NAME_None,
+							PrimarySlotName,
+							true);
+        				return true;
+        			}
+        		}
+        		break;
+        	}
         }
     }
     SavedSecondaryHand = nullptr;

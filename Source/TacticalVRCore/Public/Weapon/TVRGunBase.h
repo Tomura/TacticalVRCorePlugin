@@ -9,6 +9,13 @@
 
 #include "TVRGunBase.generated.h"
 
+UENUM(BlueprintType)
+enum class ETVRHandSwapType : uint8
+{
+	KeepWorldPosition,
+	GripPrimary,
+	None
+};
 
 UENUM(BlueprintType)
 enum class ETVRGunType : uint8
@@ -539,6 +546,9 @@ protected:
     /** Type of gun. Used mainly for sorting. */
 	UPROPERTY(Category = "Gun", EditDefaultsOnly)
 	ETVRGunType GunType;
+
+	UPROPERTY(Category = "Gun", EditDefaultsOnly)
+	ETVRHandSwapType HandSwapType;
 	
     /** best used for pistols or other single hand weapons */
     UPROPERTY(Category = "Gun", EditDefaultsOnly)
@@ -565,7 +575,8 @@ protected:
 	 * Secondary Hand that is currently attached as primary,
 	 * but needs to be reattached as secondary once the primary slot is gripped again
 	 */
-	TWeakObjectPtr<class UGripMotionControllerComponent> SavedSecondaryHand;
+	UPROPERTY()
+	class UGripMotionControllerComponent* SavedSecondaryHand;
 	
 	/** Relative Transform of the secondary hand, used when re attaching the hand as a secondary. */
 	FTransform SavedSecondaryHandRelTransform;
