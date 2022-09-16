@@ -49,5 +49,8 @@ public:
     static float GetDistanceAlongSplineClosestToWorldLocation(const USplineComponent* Spline, const FVector& Location);
 
 	UFUNCTION(BlueprintPure, Category = "Utilities", meta = (DeterminesOutputType = "Class"))
-	static UObject* GetClassDefaultObject(UClass* Class);	
+	static UObject* GetClassDefaultObject(UClass* Class);
+
+	UFUNCTION(Category = "Utilities", BlueprintCallable, BlueprintPure)
+	static class ATVRGraspingHand* GetGraspingHandForController(class UGripMotionControllerComponent* Controller);
 };

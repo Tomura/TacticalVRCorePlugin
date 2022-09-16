@@ -11,6 +11,7 @@
 
 #include "TVRGraspingHand.generated.h"
 
+enum class ETVRHandSwapType: uint8;
 
 UENUM(BlueprintType)
 enum class ETriggerIndices: uint8
@@ -93,6 +94,10 @@ public:
 	UPROPERTY(Category="Hand", BlueprintReadOnly)
 	float TriggerPress;
 
+
+	ETVRHandSwapType PendingHandSwap;
+	FTransform PendingRelativeMeshTransform;
+	
 protected:	
 	/** Hand Type Left/Right of the corresponding motion controller */
 	EControllerHand HandType;
@@ -164,6 +169,9 @@ protected:
 	/** Whether fingers are overlapping something or not*/
 	UPROPERTY(Category = "Hand", BlueprintReadWrite)
 	TMap<ETriggerIndices, bool> FingersOverlapping;
+
+	bool bForceFreezePose;
+	bool bForceFreezePosition;
 		
 private:
 	/** Whether the hand is currently being interpolated into position **/
@@ -241,6 +249,9 @@ public:
 	void PostHandleGripped();
 	
 	virtual void InitializeAndAttach(const FBPActorGripInformation& GripInfo, bool bIsSecondaryGrip, bool bSkipEvaluation = false);
+
+	virtual void ForceFreezeHand(bool bFreezePose = true, bool bFreezeAttachment = true);
+	
 protected:
 	
 	UFUNCTION(Category="Hand", BlueprintCallable)
@@ -271,6 +282,7 @@ protected:
 	 * Active Physics wrapped in a function to call after one frame
 	 */
 	virtual void DelayedActivePhysics();
+	virtual void DelayedActivePhysics(FTimerDelegate Then);
 
 	/**
 	 * Start Lerping Hand
@@ -290,6 +302,8 @@ protected:
 	 */
 	virtual void UpdateLerpHand(float DeltaTime);
 	virtual void FinishedLerpHand();
+	virtual void FinishedLerpHand(FTimerDelegate Then);
+	FTimerHandle StartLerpTimer;
 
 	virtual void StartCurl();
 	virtual void StopCurl();
