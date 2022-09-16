@@ -553,16 +553,14 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 		return;
 	}
 
-	if(bLerpHand) // we need to delay until lerping is finished, and we will force it to finish
+	// if(bLerpHand) // we need to delay until lerping is finished, and we will force it to finish
+	// {
+	// 	const auto DelayedGripDelegate = FTimerDelegate::CreateUObject(this, &ATVRGraspingHand::OnDelayedGrippedObject, GripInfo);
+	// 	FinishedLerpHand(DelayedGripDelegate);
+	// 	// GetWorldTimerManager().SetTimerForNextTick(DelayedGripDelegate);
+	// }
+	// else
 	{
-		const auto DelayedGripDelegate = FTimerDelegate::CreateUObject(this, &ATVRGraspingHand::OnDelayedGrippedObject, GripInfo);
-		FinishedLerpHand(DelayedGripDelegate);
-		// GetWorldTimerManager().SetTimerForNextTick(DelayedGripDelegate);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("[GraspingHand] %s: Gripping With Lerp: %d"), *this->GetFName().ToString(), GripInfo.bIsLerping);
-		UE_LOG(LogTemp, Log, TEXT("[GraspingHand] %s: Gripping With DisallowLerp: %d"), *this->GetFName().ToString(), GripInfo.AdvancedGripSettings.bDisallowLerping);
 		bIsGripping = true;
 	
 		RetrievePoses(GripInfo,false);
@@ -574,7 +572,6 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 			HandAnimState = bHasCustomAnimation ? EHandAnimState::Custom : EHandAnimState::Dynamic;		
 		}
 		StartCurl();
-		// BP_StartHandCurl();
 		PostHandleGripped();
 		PendingHandSwap = ETVRHandSwapType::None;
 	}
@@ -603,24 +600,23 @@ void ATVRGraspingHand::OnDroppedObject(const FBPActorGripInformation& GripInfo, 
 			GetRootPhysics()->AttachToComponent(GetSkeletalMeshComponent(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
 			GetRootPhysics()->SetRelativeTransform(OriginalGripTransform);
 		}
-		StartLerpHand();
-		// StartLerpTimer = GetWorldTimerManager().SetTimerForNextTick(this, ATVRGraspingHand::StartLerpHand);
+		if(PendingHandSwap == ETVRHandSwapType::None)
+		{
+			StartLerpHand();
+		}
 
 		if(bIsPhysicalHand)
 		{
-			GetSkeletalMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			HandAnimState = EHandAnimState::Animated;
 			bHadCurled = false;
 			ClearFingers();
 			StopCurl();
 			ResetCurl();
-			// BP_StopHandCurl();
 		}
 		else
 		{
 			HandAnimState = EHandAnimState::Dynamic;
 			ReverseCurl();
-			// BP_ReverseHandCurl();
 		}
 		ResetAttachmentProxy();
 	}
@@ -715,6 +711,10 @@ void ATVRGraspingHand::DelayedActivePhysics(FTimerDelegate Then)
 
 void ATVRGraspingHand::StartLerpHand()
 {
+	if(bIsPhysicalHand)
+	{
+		GetSkeletalMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 	bLerpHand = true;
 	HandLerpAlpha = 0.f;
 }
