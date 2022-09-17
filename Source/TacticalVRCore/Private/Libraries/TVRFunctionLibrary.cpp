@@ -3,6 +3,7 @@
 #include "Libraries/TVRFunctionLibrary.h"
 #include "VRGripInterface.h"
 #include "VRExpansionFunctionLibrary.h"
+#include "Player/TVRCharacter.h"
 
 bool UTVRFunctionLibrary::ValidateGameplayTag(UObject* ObjectToCheck, const FGameplayTag& BaseTag, const FGameplayTag& GameplayTag, const FGameplayTag& DefaultTag)
 {
@@ -71,4 +72,16 @@ float UTVRFunctionLibrary::GetDistanceAlongSplineClosestToWorldLocation(
 UObject* UTVRFunctionLibrary::GetClassDefaultObject(UClass* Class)
 {
 	return Class->GetDefaultObject();
+}
+
+ATVRGraspingHand* UTVRFunctionLibrary::GetGraspingHandForController(UGripMotionControllerComponent* Controller)
+{
+	if(Controller && Controller->GetOwner())
+	{
+		if(const auto Character = Cast<ATVRCharacter>(Controller->GetOwner()))
+		{
+			return Character->GetGraspingHand(Controller);			
+		}
+	}
+	return nullptr;
 }
