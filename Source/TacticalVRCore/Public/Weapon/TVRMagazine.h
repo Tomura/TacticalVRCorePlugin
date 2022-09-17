@@ -57,6 +57,9 @@ public:
 	void GetFollowerLocationAndRotation(FVector& OutVector, FRotator& OutRotator) const;
 	virtual void GetFollowerLocationAndRotation_Implementation(FVector& OutVector, FRotator& OutRotator) const;
 
+	FVector GetCenterOfMass() const;
+	FVector SavedCenterOfMass;
+
 	/**
      * Override so that the Primary Grip Type changes to prevent sudden detachment when the magazine is attached to a weapon
      */

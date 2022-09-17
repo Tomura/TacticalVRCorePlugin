@@ -67,6 +67,10 @@ public:
 
 protected:
 	
+	/** Weak reference to primary hand */
+	UPROPERTY()
+	class UGripMotionControllerComponent* PrimaryController;
+	
 	/** Current Secondary Grip Controller */
 	UPROPERTY()
 	UGripMotionControllerComponent* SecondaryController;
@@ -420,6 +424,7 @@ public:
 	bool GetPrimaryHandTransform(FTransform& OutTransform, EControllerHand HandType) const;
 	virtual bool GetPrimaryHandTransform_Implementation(FTransform& OutTransform, EControllerHand HandType) const {return false;}
 
+	UGripMotionControllerComponent* GetPrimaryController() const {return PrimaryController;}
 	UGripMotionControllerComponent* GetSecondaryController() const;
 	const FBPActorGripInformation* GetSecondaryGripInfo() const;
 	
@@ -496,8 +501,6 @@ protected:
 	
 	virtual void CollectWeaponMeshes();
 	
-	/** Weak reference to primary hand */
-	TWeakObjectPtr<class UGripMotionControllerComponent> PrimaryHand;
 	
 	UPROPERTY()
     class UStaticMeshComponent* LoadedBullet;

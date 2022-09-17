@@ -175,44 +175,11 @@ void UTVRMagWellComponent::HandleMagDrop(float DeltaSeconds)
         {
             if(GetCurrentMagazine()->VRGripInterfaceSettings.bIsHeld)
             {
-            	bWasReleasedByHand = true;
-                MagVelocity = FVector::ZeroVector;
-                UGripMotionControllerComponent* GrippingHand = CurrentMagazine->VRGripInterfaceSettings.HoldingControllers[0].HoldingController;               
-                const FTransform HandTransform = GrippingHand->GetComponentTransform();
-                const FTransform MagSlot = CurrentMagazine->GetGripSlotTransform(GrippingHand);
-                const FTransform MagOrigin = CurrentMagazine->GetAttachOrigin()->GetComponentTransform();
-                const FTransform QueryTransform = MagOrigin * MagSlot.Inverse() * HandTransform;
-                
-                FTransform FoundTransform;
-            	GetSplineTransform(QueryTransform.GetLocation(), FoundTransform);
-                const FTransform NewTransform = TransformSplineToMagazineCoordinates(FoundTransform);
-
-                MagVelocity = (FoundTransform.GetLocation() - MagOrigin.GetLocation())/DeltaSeconds;
-                CurrentMagazine->SetMagazineOriginToTransform(NewTransform);
-                CurrentMagazine->MagInsertPercentage =
-                    UTVRFunctionLibrary::GetDistanceAlongSplineClosestToWorldLocation(MyMagSpline, NewTransform.GetLocation())/MyMagSpline->GetSplineLength();
+				HandleMagInsert(DeltaSeconds);
             }
             else if(!bNeedsToBeReleasedByHand || bWasReleasedByHand)
             {
-                const float DropAcceleration = GetWorld()->GetGravityZ();
-                MagVelocity = MagVelocity + FVector::UpVector * DropAcceleration * DeltaSeconds;
-                MagVelocity -= GetUpVector() * MagEjectAcceleration * DeltaSeconds; // quick and dirty solution. todo: a better implementation would increment the spline percentage instead
-                const FVector MagLoc = GetCurrentMagazine()->GetAttachOrigin()->GetComponentLocation();
-                const FVector ExternalVelocity = Gun->GetStaticMeshComponent()->GetPhysicsLinearVelocityAtPoint(GetComponentLocation());
-                const FVector DesiredMagLocInternal = MagLoc + (MagVelocity) * DeltaSeconds;
-                const FVector DesiredMagLoc = DesiredMagLocInternal - ExternalVelocity * DeltaSeconds;
-                
-
-                // const FTransform SplineTransform = MyMagSpline->GetTransformAtDistanceAlongSpline(MagDropDistance, ESplineCoordinateSpace::World, false);
-                FTransform SplineTransform;
-            	GetSplineTransform(DesiredMagLoc, SplineTransform);
-                const FVector SplineInternalLoc = MyMagSpline->FindLocationClosestToWorldLocation(DesiredMagLocInternal, ESplineCoordinateSpace::World);
-                const FTransform NewTransform = TransformSplineToMagazineCoordinates(SplineTransform);
-
-                MagVelocity = (SplineInternalLoc - MagLoc)/DeltaSeconds;                
-                CurrentMagazine->SetMagazineOriginToTransform(NewTransform);
-                CurrentMagazine->MagInsertPercentage =
-                    UTVRFunctionLibrary::GetDistanceAlongSplineClosestToWorldLocation(MyMagSpline, NewTransform.GetLocation())/MyMagSpline->GetSplineLength();
+            	HandleMagFall(DeltaSeconds);
             }
         }
         else if(bEjectMag)
@@ -224,6 +191,63 @@ void UTVRMagWellComponent::HandleMagDrop(float DeltaSeconds)
             OnMagFullyInserted();
         }
     }
+}
+
+void UTVRMagWellComponent::HandleMagInsert(float DeltaSeconds)
+{
+	ATVRGunBase* Gun = GetGunOwner();
+    const USplineComponent* MyMagSpline = GetMagSpline();
+
+	
+	bWasReleasedByHand = true;
+	MagVelocity = FVector::ZeroVector;
+	UGripMotionControllerComponent* GrippingHand = CurrentMagazine->VRGripInterfaceSettings.HoldingControllers[0].HoldingController;               
+	const FTransform HandTransform = GrippingHand->GetComponentTransform();
+	const FTransform MagSlot = CurrentMagazine->GetGripSlotTransform(GrippingHand);
+	const FTransform MagOrigin = CurrentMagazine->GetAttachOrigin()->GetComponentTransform();
+	const FTransform QueryTransform = MagOrigin * MagSlot.Inverse() * HandTransform;
+                
+	FTransform FoundTransform;
+	GetSplineTransform(QueryTransform.GetLocation(), FoundTransform);
+	const FTransform NewTransform = TransformSplineToMagazineCoordinates(FoundTransform);
+
+	MagVelocity = (FoundTransform.GetLocation() - MagOrigin.GetLocation())/DeltaSeconds;
+	CurrentMagazine->SetMagazineOriginToTransform(NewTransform);
+	CurrentMagazine->MagInsertPercentage =
+		UTVRFunctionLibrary::GetDistanceAlongSplineClosestToWorldLocation(MyMagSpline, NewTransform.GetLocation())/MyMagSpline->GetSplineLength();
+}
+
+void UTVRMagWellComponent::HandleMagFall(float DeltaSeconds)
+{
+	ATVRGunBase* Gun = GetGunOwner();
+	const USplineComponent* MyMagSpline = GetMagSpline();
+
+	const auto MagCoM = CurrentMagazine->GetCenterOfMass();	
+	const auto RotVel = Gun->GetStaticMeshComponent()->GetPhysicsAngularVelocityInRadians();
+	const auto CentrifugalAcc = RotVel ^ (RotVel ^ (Gun->GetActorLocation()-MagCoM));
+	// DrawDebugDirectionalArrow(GetWorld(),
+	// 	MagCoM, MagCoM + CentrifugalAcc*0.001f, 1.f, FColor::Red, false,
+	// 	-1, 100, 0.5f);
+	
+	const float DropAcceleration = GetWorld()->GetGravityZ();
+	MagVelocity = MagVelocity + (FVector::UpVector * DropAcceleration + CentrifugalAcc) * DeltaSeconds;
+	MagVelocity -= GetUpVector() * MagEjectAcceleration * DeltaSeconds; // quick and dirty solution. todo: a better implementation would increment the spline percentage instead
+	const FVector MagLoc = GetCurrentMagazine()->GetAttachOrigin()->GetComponentLocation();
+	const FVector ExternalVelocity = Gun->GetStaticMeshComponent()->GetPhysicsLinearVelocityAtPoint(GetComponentLocation());
+	const FVector DesiredMagLocInternal = MagLoc + (MagVelocity) * DeltaSeconds;
+	const FVector DesiredMagLoc = DesiredMagLocInternal - ExternalVelocity * DeltaSeconds;
+	                
+
+	// const FTransform SplineTransform = MyMagSpline->GetTransformAtDistanceAlongSpline(MagDropDistance, ESplineCoordinateSpace::World, false);
+	FTransform SplineTransform;
+	GetSplineTransform(DesiredMagLoc, SplineTransform);
+	const FVector SplineInternalLoc = MyMagSpline->FindLocationClosestToWorldLocation(DesiredMagLocInternal, ESplineCoordinateSpace::World);
+	const FTransform NewTransform = TransformSplineToMagazineCoordinates(SplineTransform);
+
+	MagVelocity = (SplineInternalLoc - MagLoc)/DeltaSeconds;                
+	CurrentMagazine->SetMagazineOriginToTransform(NewTransform);
+	CurrentMagazine->MagInsertPercentage =
+		UTVRFunctionLibrary::GetDistanceAlongSplineClosestToWorldLocation(MyMagSpline, NewTransform.GetLocation())/MyMagSpline->GetSplineLength();
 }
 
 void UTVRMagWellComponent::OnMagFullyEjected()
