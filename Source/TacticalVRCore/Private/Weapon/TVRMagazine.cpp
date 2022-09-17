@@ -68,6 +68,9 @@ void ATVRMagazine::BeginPlay()
 	CurrentAmmo = -1; // little hack to force update of instances and other components
 	SetAmmo(InitAmmo);
 
+	const FVector COMWorld = GetStaticMeshComponent()->GetCenterOfMass();
+	SavedCenterOfMass = GetActorTransform().InverseTransformPosition(COMWorld);
+
 	MagazineMeshes.Empty();
 	TArray<UStaticMeshComponent*> Meshes;
 	GetComponents<UStaticMeshComponent>(Meshes);
@@ -265,7 +268,11 @@ void ATVRMagazine::ReInitGrip()
         {           
             const FTransform RelTransform = HoldingHand->GrippedObjects[0].RelativeTransform; 
             HoldingHand->DropObjectByInterface(this, 0, FVector::ZeroVector, FVector::ZeroVector);
-            HoldingHand->GripObjectByInterface(this, RelTransform, true, EName::NAME_None, EName::NAME_None, true);
+            HoldingHand->GripObjectByInterface(this,
+            	RelTransform, true,
+            	EName::NAME_None,
+            	FName(TEXT("Magazine")),
+            	true);
         }
     }
 }
@@ -366,6 +373,11 @@ void ATVRMagazine::GetFollowerLocationAndRotation_Implementation(FVector& OutVec
 	OutVector.Y = OutVector.X;
 	OutVector.X = TempY;
 	OutRotator = FRotator(-TempRot.Roll, TempRot.Yaw, -TempRot.Pitch);
+}
+
+FVector ATVRMagazine::GetCenterOfMass() const
+{
+	return GetActorTransform().TransformPosition(SavedCenterOfMass);
 }
 
 
