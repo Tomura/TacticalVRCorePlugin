@@ -848,6 +848,10 @@ void ATVRGunBase::ReInitSecondary(UGripMotionControllerComponent* GrippingHand,
         {
             UGripMotionControllerComponent* OldSecondaryHand = SavedSecondaryHand;
             const FTransform OldSecondaryTransform = SavedSecondaryHandRelTransform;
+        	if(const auto GraspingHand = UTVRFunctionLibrary::GetGraspingHandForController(SavedSecondaryHand))
+        	{
+        		GraspingHand->bPendingReinitSecondary = true;
+        	}
             SavedSecondaryHand->DropObject(this, 0, false, FVector::ZeroVector, FVector::ZeroVector);
             GrippingHand->AddSecondaryAttachmentToGrip(GripInfo, OldSecondaryHand, OldSecondaryTransform, true, 0.f, true, SavedSecondarySlotName);
         }
@@ -889,11 +893,11 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
         					// GetActorTransform().GetRelativeTransform(SavedSecondaryHand->GetComponentTransform());
         				if(const auto GraspingHand = UTVRFunctionLibrary::GetGraspingHandForController(SavedSecondaryHand))
         				{
-        					// prepare for handswap
-        					// GraspingHand->ForceFreezeHand(true, true);
         					GraspingHand->PendingHandSwap = ETVRHandSwapType::KeepWorldPosition;
         					const auto HandTF = GraspingHand->GetSkeletalMeshComponent()->GetComponentTransform();
         					GraspingHand->PendingRelativeMeshTransform = HandTF * GetActorTransform().Inverse();
+        					GraspingHand->SnapShotCustomPose();
+        					GraspingHand->FreezePose();
 						}
         				SavedSecondaryHand->GripObjectByInterface(this, RelativeSocketTransform,
 							true, EName::NAME_None,

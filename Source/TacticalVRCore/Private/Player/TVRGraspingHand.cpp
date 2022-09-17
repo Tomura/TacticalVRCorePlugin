@@ -553,27 +553,27 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 		return;
 	}
 
-	// if(bLerpHand) // we need to delay until lerping is finished, and we will force it to finish
-	// {
-	// 	const auto DelayedGripDelegate = FTimerDelegate::CreateUObject(this, &ATVRGraspingHand::OnDelayedGrippedObject, GripInfo);
-	// 	FinishedLerpHand(DelayedGripDelegate);
-	// 	// GetWorldTimerManager().SetTimerForNextTick(DelayedGripDelegate);
-	// }
-	// else
+	if(bLerpHand) // we need to delay until lerping is finished, and we will force it to finish
+	{
+		const auto DelayedGripDelegate = FTimerDelegate::CreateUObject(this, &ATVRGraspingHand::OnDelayedGrippedObject, GripInfo);
+		FinishedLerpHand(DelayedGripDelegate);
+	}
+	else
 	{
 		bIsGripping = true;
 	
 		RetrievePoses(GripInfo,false);
+		if(bPendingReinitSecondary)
+		{
+			
+		}
 		InitializeAndAttach(GripInfo, false, false);
 
 		StopLerpHand();
-		if(bHasCustomAnimation)
-		{
-			HandAnimState = bHasCustomAnimation ? EHandAnimState::Custom : EHandAnimState::Dynamic;		
-		}
 		StartCurl();
 		PostHandleGripped();
 		PendingHandSwap = ETVRHandSwapType::None;
+		bPendingReinitSecondary = false;
 	}
 }
 
@@ -603,20 +603,19 @@ void ATVRGraspingHand::OnDroppedObject(const FBPActorGripInformation& GripInfo, 
 		if(PendingHandSwap == ETVRHandSwapType::None)
 		{
 			StartLerpHand();
-		}
-
-		if(bIsPhysicalHand)
-		{
-			HandAnimState = EHandAnimState::Animated;
-			bHadCurled = false;
-			ClearFingers();
-			StopCurl();
-			ResetCurl();
-		}
-		else
-		{
-			HandAnimState = EHandAnimState::Dynamic;
-			ReverseCurl();
+			if(bIsPhysicalHand)
+			{
+				HandAnimState = EHandAnimState::Animated;
+				bHadCurled = false;
+				ClearFingers();
+				StopCurl();
+				ResetCurl();
+			}
+			else
+			{
+				HandAnimState = EHandAnimState::Dynamic;
+				ReverseCurl();
+			}
 		}
 		ResetAttachmentProxy();
 	}
@@ -643,10 +642,6 @@ void ATVRGraspingHand::OnSecondaryAddedOnOther(const FBPActorGripInformation& Gr
 		InitializeAndAttach(GripInfo, true, false);
 		
 		StopLerpHand();
-		if(bHasCustomAnimation)		
-		{
-			HandAnimState = bHasCustomAnimation ? EHandAnimState::Custom : EHandAnimState::Dynamic;		
-		}
 		StartCurl();
 	}
 }
@@ -819,20 +814,7 @@ void ATVRGraspingHand::SetupPhysicsIfNeededNative(bool bSimulate, bool bSetRelat
 			const FVector CenterOfMass = SkelMesh->GetCenterOfMass();
 			GetSimulatingHandConstraint()->SetWorldLocation(CenterOfMass, false, nullptr, ETeleportType::TeleportPhysics);
 			GetSimulatingHandConstraint()->SetConstrainedComponents(GetPhysicsRoot(), NAME_None, SkelMesh, BoneName);
-
-			// const bool bSetReferenceFrame = SkelMesh->GetComponentScale().GetMin() < 0.f && !bSetRelativeTrans;
-			// if(bSetReferenceFrame)
-			// {
-			// 	FTransform FrameTransform;
-			// 	GetSimulatingHandConstraint()->GetConstraintReferenceFrame(EConstraintFrame::Frame1, FrameTransform);
-			// 	GetSimulatingHandConstraint()->SetConstraintReferenceFrame(EConstraintFrame::Frame1,
-			// 		FTransform(
-			// 			FRotator(0.f, 0.f, -180.f).Quaternion() * FrameTransform.GetRotation(),
-			// 			FrameTransform.GetLocation(),
-			// 			FrameTransform.GetScale3D()
-			// 		)
-			// 	);
-			// }
+			
 			GetSimulatingHandConstraint()->SetConstraintToForceBased(true);
 			OwningController->bDisableLowLatencyUpdate = true;
 			
@@ -936,16 +918,16 @@ void ATVRGraspingHand::InitializeAndAttach(const FBPActorGripInformation& GripIn
 	SetupPhysicsIfNeededNative(false, false);
 }
 
-void ATVRGraspingHand::ForceFreezeHand(bool bFreezePose, bool bFreezeAttachment)
+void ATVRGraspingHand::SnapShotCustomPose()
 {
-	bForceFreezePose = bFreezePose;
-	if(bFreezePose)
-	{
-		HandAnimState = EHandAnimState::Frozen;
-	}
-	bForceFreezePosition = bFreezeAttachment;
-	// GetSkeletalMeshComponent()->GetAnimInstance()->SnapshotPose()
+	GetSkeletalMeshComponent()->SnapshotPose(CustomPose);
 }
+
+void ATVRGraspingHand::FreezePose()
+{
+	HandAnimState = EHandAnimState::Frozen;
+}
+
 
 void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo, bool bIsSecondary)
 {
@@ -979,9 +961,20 @@ void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo, bo
 		}
 		if(PendingHandSwap == ETVRHandSwapType::KeepWorldPosition)
 		{
+			HandSocketComponent = nullptr;
+			bHasCustomAnimation = true;
+			bCustomAnimIsSnapShot = true;
 			bUseTargetMeshTransform = true;
 			const auto ActorTF = GripInfo.GetGrippedActor()->GetActorTransform();
 			TargetMeshTransform = PendingRelativeMeshTransform * ActorTF;
+			return;
+		}
+		if(bPendingReinitSecondary)
+		{
+			HandSocketComponent = nullptr;
+			bHasCustomAnimation = true;
+			bCustomAnimIsSnapShot = true;
+			bUseTargetMeshTransform = false;
 			return;
 		}
 	}
@@ -1009,19 +1002,6 @@ void ATVRGraspingHand::ClearFingers()
 
 void ATVRGraspingHand::SetPhysicalRelativeTransform()
 {
-	// const bool bHasNegativeScale = GetSkeletalMeshComponent()->GetComponentScale().GetMin() < 0.f;
-	// if(bHasNegativeScale)
-	// {
-	// 	const FTransform ReverseTransform = FTransform(
-	// 		FRotator(0.f, 0.f, -180.f),
-	// 		FVector::ZeroVector,
-	// 		FVector::OneVector
-	// 	);
-	// 	const FTransform NewTransform = BaseRelativeTransform * ReverseTransform;
-	// 	GetSkeletalMeshComponent()->SetRelativeTransform(NewTransform, false, nullptr, ETeleportType::TeleportPhysics);
-	// }
-	// else
-	{
-		GetSkeletalMeshComponent()->SetRelativeTransform(BaseRelativeTransform, false, nullptr, ETeleportType::TeleportPhysics);
-	}
+	GetSkeletalMeshComponent()->SetRelativeTransform(BaseRelativeTransform, false, nullptr, ETeleportType::TeleportPhysics);
+
 }

@@ -96,6 +96,7 @@ public:
 
 
 	ETVRHandSwapType PendingHandSwap;
+	bool bPendingReinitSecondary;
 	FTransform PendingRelativeMeshTransform;
 	
 protected:	
@@ -169,9 +170,6 @@ protected:
 	/** Whether fingers are overlapping something or not*/
 	UPROPERTY(Category = "Hand", BlueprintReadWrite)
 	TMap<ETriggerIndices, bool> FingersOverlapping;
-
-	bool bForceFreezePose;
-	bool bForceFreezePosition;
 		
 private:
 	/** Whether the hand is currently being interpolated into position **/
@@ -250,7 +248,8 @@ public:
 	
 	virtual void InitializeAndAttach(const FBPActorGripInformation& GripInfo, bool bIsSecondaryGrip, bool bSkipEvaluation = false);
 
-	virtual void ForceFreezeHand(bool bFreezePose = true, bool bFreezeAttachment = true);
+	void SnapShotCustomPose();
+	void FreezePose();
 	
 protected:
 	
