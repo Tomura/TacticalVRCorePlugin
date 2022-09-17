@@ -12,9 +12,9 @@
 UENUM(BlueprintType)
 enum class ETVRHandSwapType : uint8
 {
-	KeepWorldPosition,
-	GripPrimary,
-	None
+	KeepWorldPosition UMETA(ToolTip = "On hand swap, try to retain the guns world position. Best for Rifles."),
+	GripPrimary UMETA(ToolTip = "On hand swap, make the secondary hand grip the primary grip slot. Best for Pistols."),
+	None UMETA(ToolTip = "Do not Handswap, just release the other hand.")
 };
 
 UENUM(BlueprintType)
@@ -549,11 +549,7 @@ protected:
 
 	UPROPERTY(Category = "Gun", EditDefaultsOnly)
 	ETVRHandSwapType HandSwapType;
-	
-    /** best used for pistols or other single hand weapons */
-    UPROPERTY(Category = "Gun", EditDefaultsOnly)
-    bool bHandSwapToPrimaryGripSlot;
-	
+		
 	UPROPERTY(Category = "Gun", EditDefaultsOnly)
 	class UTVRMagazineCompInterface* MagInterface;
 	

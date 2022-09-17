@@ -83,7 +83,6 @@ ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
 	
     bIsBoltLocked = false;
 	
-    bHandSwapToPrimaryGripSlot = false;
 	HandSwapType = ETVRHandSwapType::KeepWorldPosition;
     bHasLastRoundBoltHoldOpen = true;
 	bDoesCycle = true;

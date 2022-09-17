@@ -558,7 +558,7 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 		const auto DelayedGripDelegate = FTimerDelegate::CreateUObject(this, &ATVRGraspingHand::OnDelayedGrippedObject, GripInfo);
 		FinishedLerpHand(DelayedGripDelegate);
 		// we already want to set the pose, because there will be 2 frames of delay.
-		if(PendingHandSwap != ETVRHandSwapType::None && CustomPose.bIsValid())
+		if(PendingHandSwap != ETVRHandSwapType::None && CustomPose.bIsValid)
 		{
 			bHasCustomAnimation = true;
 			bCustomAnimIsSnapShot = true;
@@ -570,10 +570,6 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 		bIsGripping = true;
 	
 		RetrievePoses(GripInfo,false);
-		if(bPendingReinitSecondary)
-		{
-			
-		}
 		InitializeAndAttach(GripInfo, false, false);
 
 		StopLerpHand();
@@ -607,9 +603,10 @@ void ATVRGraspingHand::OnDroppedObject(const FBPActorGripInformation& GripInfo, 
 			GetRootPhysics()->AttachToComponent(GetSkeletalMeshComponent(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
 			GetRootPhysics()->SetRelativeTransform(OriginalGripTransform);
 		}
-		if(PendingHandSwap == ETVRHandSwapType::None)
+		// if(PendingHandSwap == ETVRHandSwapType::None)
 		{
 			StartLerpHand();
+			bHasCustomAnimation = false;
 			if(bIsPhysicalHand)
 			{
 				HandAnimState = EHandAnimState::Animated;
@@ -988,6 +985,7 @@ void ATVRGraspingHand::RetrievePoses(const FBPActorGripInformation& GripInfo, bo
 	HandSocketComponent = nullptr;
 	bUseTargetMeshTransform = false;
 	bHasCustomAnimation = false;
+	bCustomAnimIsSnapShot = false;
 }
 
 void ATVRGraspingHand::SetFingerCollisions()
