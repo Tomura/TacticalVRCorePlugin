@@ -557,6 +557,13 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 	{
 		const auto DelayedGripDelegate = FTimerDelegate::CreateUObject(this, &ATVRGraspingHand::OnDelayedGrippedObject, GripInfo);
 		FinishedLerpHand(DelayedGripDelegate);
+		// we already want to set the pose, because there will be 2 frames of delay.
+		if(PendingHandSwap != ETVRHandSwapType::None && CustomPose.bIsValid())
+		{
+			bHasCustomAnimation = true;
+			bCustomAnimIsSnapShot = true;
+			HandAnimState = EHandAnimState::Custom;
+		}
 	}
 	else
 	{
