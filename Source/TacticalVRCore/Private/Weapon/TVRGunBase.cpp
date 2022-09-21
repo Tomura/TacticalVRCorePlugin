@@ -697,7 +697,7 @@ void ATVRGunBase::OnGrip_Implementation(UGripMotionControllerComponent* Gripping
         // todo: deny free gripping
         const ATVRGunBase* DefaultCDO = GetDefault<ATVRGunBase>(GetClass());
         VRGripInterfaceSettings.SecondaryGripType = DefaultCDO->VRGripInterfaceSettings.SecondaryGripType;
-    	PrimaryHand = GrippingHand;
+    	PrimaryController = GrippingHand;
     	TriggerComponent->ActivateTrigger(GrippingHand);
     }
     else
@@ -743,7 +743,7 @@ void ATVRGunBase::OnGripRelease_Implementation(UGripMotionControllerComponent* G
         OnBoltReleaseReleased();
         OnStopFire();
     	TriggerComponent->DeactivateTrigger();
-    	PrimaryHand = nullptr;
+    	PrimaryController = nullptr;
     }
     
     Super::OnGripRelease_Implementation(GrippingHand, GripInfo, bWasSocketed);

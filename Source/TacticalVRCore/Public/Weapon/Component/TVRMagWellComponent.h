@@ -110,6 +110,9 @@ public:
      */
 	virtual void HandleMagDrop(float DeltaSeconds);
 
+	virtual void HandleMagInsert(float DeltaSeconds);
+	virtual void HandleMagFall(float DeltaSeconds);
+
     /**
      * Event Called when the mag is fully ejected and not constrained by the Magwell anymore.
      */
