@@ -193,6 +193,15 @@ ATVRCharacter* UTVRGunFireComponent::GetVRCharacterOwner() const
 
 float UTVRGunFireComponent::GetRefireTime() const
 {
+	float FinalRefireTime = RefireTime;
+	if(const auto GunOwner = Cast<ATVRGunBase>(GetOwner()))
+	{
+		for(const auto TestAttachment: GunOwner->GetAttachments())
+		{
+			FinalRefireTime *= TestAttachment->GetRateOfFireModifier();
+		}
+	}
+	
 	return FMath::Max(RefireTime, 0.02f);
 }
 
@@ -313,7 +322,7 @@ float UTVRGunFireComponent::GetDamage(TSubclassOf<ATVRCartridge> Cartridge) cons
 		{
 			if(const auto Attachment = Cast<ATVRWeaponAttachment>(Child))
 			{
-				DamageMod *= Attachment->GetDamageModifier();
+				DamageMod *= Attachment->GetMuzzleVelocityModifier();
 			}
 		}
 	}
@@ -589,12 +598,9 @@ void UTVRGunFireComponent::ProcessHits(TArray<FHitResult>& Hits, TSubclassOf<ATV
 			{
 				if(const auto GunOwner = Cast<ATVRGunBase>(GetOwner()))
 				{
-					for(const auto AttachPoint: GunOwner->GetAttachmentPoints())
+					for(const auto TestAttachment: GunOwner->GetAttachments())
 					{
-						if(const auto WPNA = AttachPoint->GetCurrentAttachment())
-						{
-							Damage *= WPNA->GetDamageModifier();
-						}
+						Damage *= TestAttachment->GetMuzzleVelocityModifier();
 					}
 				}
 			}

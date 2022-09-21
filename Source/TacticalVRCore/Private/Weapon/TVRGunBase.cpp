@@ -671,6 +671,18 @@ void ATVRGunBase::SetColorVariant(uint8 newVariant)
 	OnColorVariantChanged(ColorVariant);
 }
 
+void ATVRGunBase::OnAttachmentAttached(ATVRWeaponAttachment* NewAttachment, UTVRAttachmentPoint* AttachmentPoint)
+{
+	Attachments.AddUnique(NewAttachment);
+	Attachments.Remove(nullptr);
+}
+
+void ATVRGunBase::OnAttachmentDetached(ATVRWeaponAttachment* OldAttachment, UTVRAttachmentPoint* AttachmentPoint)
+{
+	Attachments.Remove(OldAttachment);
+	Attachments.Remove(nullptr);
+}
+
 void ATVRGunBase::SetBoltMesh(UStaticMeshComponent* NewMesh)
 {
 	BoltMesh = NewMesh;
@@ -698,7 +710,10 @@ void ATVRGunBase::OnGrip_Implementation(UGripMotionControllerComponent* Gripping
         const ATVRGunBase* DefaultCDO = GetDefault<ATVRGunBase>(GetClass());
         VRGripInterfaceSettings.SecondaryGripType = DefaultCDO->VRGripInterfaceSettings.SecondaryGripType;
     	PrimaryController = GrippingHand;
-    	TriggerComponent->ActivateTrigger(GrippingHand);
+    	if(GripInfo.SlotName == PrimarySlotName)
+    	{
+    		TriggerComponent->ActivateTrigger(GrippingHand);
+    	}
     }
     else
     {
@@ -975,13 +990,10 @@ void ATVRGunBase::AddRecoil()
 	FVector RecoilImpulseToApply = RecoilImpulse;
 	FVector AngularRecoilImpulseToApply = RecoilAngularImpulse;
 
-	for(const auto AttachPoint: AttachmentPoints)
+	for(const auto LoopWPNA: GetAttachments())
 	{
-		if(const auto LoopWPNA = AttachPoint->GetCurrentAttachment())
-		{
-			RecoilImpulseToApply *= LoopWPNA->GetRecoilModifier();
-			AngularRecoilImpulseToApply *= LoopWPNA->GetRecoilModifier();
-		}
+		RecoilImpulseToApply *= LoopWPNA->GetRecoilModifier();
+		AngularRecoilImpulseToApply *= LoopWPNA->GetRecoilModifier();
 	}
 	
     if(VRGripInterfaceSettings.bIsHeld)
@@ -1275,17 +1287,27 @@ void ATVRGunBase::OnBoltReleaseReleasedFromPrimary()
 void ATVRGunBase::OnBoltReleasePressed()
 {
     bBoltReleasePressed = true;
-    if(IsBoltLocked())
-    {
-        OnBoltReleased();
-    }
-    BP_OnBoltReleasePressed();
+	if(PrimaryController)
+	{
+		if(const auto Grip = PrimaryController->GetFirstActiveGrip())
+		{
+			
+		}
+		if(IsBoltLocked())
+		{
+			OnBoltReleased();
+		}
+			BP_OnBoltReleasePressed();
+		}
 }
 
 void ATVRGunBase::OnBoltReleaseReleased()
 {
-    bBoltReleasePressed = false;
-    BP_OnBoltReleaseReleased();
+	if(bBoltReleasePressed)
+	{		
+		bBoltReleasePressed = false;
+		BP_OnBoltReleaseReleased();
+	}
 }
 
 void ATVRGunBase::OnCycleFiringMode()

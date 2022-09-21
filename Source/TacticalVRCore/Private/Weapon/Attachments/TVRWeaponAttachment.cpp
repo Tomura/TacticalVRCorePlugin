@@ -52,6 +52,20 @@ void ATVRWeaponAttachment::BeginPlay()
 	GetWorldTimerManager().SetTimerForNextTick(this, &ATVRWeaponAttachment::FindAttachPointAndAttach);
 }
 
+void ATVRWeaponAttachment::Destroyed()
+{
+	Super::Destroyed();
+	if(const auto Gun = GetGunOwner())
+	{
+		if(!Gun->IsPendingKill())
+		{			
+			Gun->EventOnGripped.RemoveAll(this);
+			Gun->EventOnDropped.RemoveAll(this);
+			Gun->OnAttachmentDetached(this, AttachmentPoint);
+		}
+	}
+}
+
 void ATVRWeaponAttachment::InitAttachments()
 {
 	// if there are attachment points we might need to call their construction logic
@@ -120,7 +134,9 @@ void ATVRWeaponAttachment::AttachToWeapon(UTVRAttachmentPoint* AttachPoint)
 		}
 		SetOwner(Gun);
 		AttachmentPoint = AttachPoint;
-		AttachPoint->OnWeaponAttachmentAttached(this);	
+		AttachPoint->OnWeaponAttachmentAttached(this);
+		Gun->OnAttachmentAttached(this, AttachPoint);
+		
 		AddTickPrerequisiteComponent(GunMesh);
 	}
 	AddTickPrerequisiteActor(Gun);

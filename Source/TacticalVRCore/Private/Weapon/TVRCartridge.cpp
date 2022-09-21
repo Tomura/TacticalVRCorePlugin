@@ -33,6 +33,8 @@ ATVRCartridge::ATVRCartridge(const FObjectInitializer& OI) : Super(OI)
 	BuckshotSpread = 0.f;
 	SpentCartridgeMesh = nullptr;
 	bIsSpent = false;
+	BaseDamage = 35.f;
+	
 	TraceDistance = 5000.f;
 	FlyByThresholdDistance = 150.f;
 }

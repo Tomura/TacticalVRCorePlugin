@@ -225,9 +225,6 @@ void UTVRMagWellComponent::HandleMagFall(float DeltaSeconds)
 	const auto MagCoM = CurrentMagazine->GetCenterOfMass();	
 	const auto RotVel = Gun->GetStaticMeshComponent()->GetPhysicsAngularVelocityInRadians();
 	const auto CentrifugalAcc = RotVel ^ (RotVel ^ (Gun->GetActorLocation()-MagCoM));
-	// DrawDebugDirectionalArrow(GetWorld(),
-	// 	MagCoM, MagCoM + CentrifugalAcc*0.001f, 1.f, FColor::Red, false,
-	// 	-1, 100, 0.5f);
 	
 	const float DropAcceleration = GetWorld()->GetGravityZ();
 	MagVelocity = MagVelocity + (FVector::UpVector * DropAcceleration + CentrifugalAcc) * DeltaSeconds;

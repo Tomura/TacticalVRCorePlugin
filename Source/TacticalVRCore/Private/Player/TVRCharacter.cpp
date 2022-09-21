@@ -451,7 +451,6 @@ void ATVRCharacter::HandleMovement(float DeltaTime)
 		AddMovementInput(MoveAxisForward, AxisForward, false);
 		AddMovementInput(MoveAxisRight, AxisRight, false);
 	}
-
 }
 
 void ATVRCharacter::HandleTurning(float DeltaTime)
@@ -1488,12 +1487,10 @@ void ATVRCharacter::SampleGripVelocities()
 
 void ATVRCharacter::SampleGripVelocity(UGripMotionControllerComponent* MotionController, FBPLowPassPeakFilter& Filter)
 {
-	TArray<FBPActorGripInformation> AllGrips;
-	MotionController->GetAllGrips(AllGrips);
-	if(AllGrips.Num() > 0)
+	if(const auto Grip = MotionController->GetFirstActiveGrip())
 	{
 		FVector TransVel, AngularVel;
-		MotionController->GetPhysicsVelocities(AllGrips[0], AngularVel, TransVel);
+		MotionController->GetPhysicsVelocities(*Grip, AngularVel, TransVel);
 		Filter.AddSample(TransVel);
 	}
 	else // not necessary for a lot of applications, but we also sample the empty hand
@@ -1637,27 +1634,22 @@ void ATVRCharacter::OnBoltReleaseReleased_Right()
 void ATVRCharacter::OnActionA_Pressed(UGripMotionControllerComponent* UsingHand)
 {
 	check(UsingHand);
-	TArray<FBPActorGripInformation> AllGrips;
-	FBPActorGripInformation GripInfo;
+	FBPActorGripInformation SecondaryGripInfo;
 	
-	UsingHand->GetAllGrips(AllGrips);
-	
-	const bool bIsPrimaryGrip = AllGrips.Num() > 0;
-	const bool bIsSecondaryGrip = GetOtherControllerHand(UsingHand)->GetIsSecondaryAttachment(UsingHand, GripInfo);
-	if(bIsPrimaryGrip)
+	if(const auto PrimaryGrip = UsingHand->GetFirstActiveGrip())
 	{		
-		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(AllGrips[0].GrippedObject))
+		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(PrimaryGrip->GrippedObject))
 		{
 			MyGun->OnMagReleasePressedFromPrimary();
 		}
-		else if(ATVRMagazine* MyMag = Cast<ATVRMagazine>(AllGrips[0].GrippedObject))
+		else if(ATVRMagazine* MyMag = Cast<ATVRMagazine>(PrimaryGrip->GrippedObject))
 		{
 			MyMag->OnMagReleasePressed();
 		}
 	}
-	else if(bIsSecondaryGrip)
+	else if(GetOtherControllerHand(UsingHand)->GetIsSecondaryAttachment(UsingHand, SecondaryGripInfo))
 	{
-		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(GripInfo.GrippedObject))
+		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(SecondaryGripInfo.GrippedObject))
 		{
 			if(!MyGun->OnSecondaryMagReleasePressed())
 			{
@@ -1686,16 +1678,11 @@ void ATVRCharacter::OnActionA_Pressed(UGripMotionControllerComponent* UsingHand)
 void ATVRCharacter::OnActionB_Pressed(UGripMotionControllerComponent* UsingHand)
 {
 	check(UsingHand);
-	TArray<FBPActorGripInformation> AllGrips;
-	FBPActorGripInformation GripInfo;
-	
-	UsingHand->GetAllGrips(AllGrips);
-	
-	const bool bIsPrimaryGrip = AllGrips.Num() > 0;
-	const bool bIsSecondaryGrip = GetOtherControllerHand(UsingHand)->GetIsSecondaryAttachment(UsingHand, GripInfo);
-	if(bIsPrimaryGrip)
+	FBPActorGripInformation SecondaryGripInfo;
+
+	if(const auto PrimaryGrip = UsingHand->GetFirstActiveGrip())
 	{		
-		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(AllGrips[0].GrippedObject))
+		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(PrimaryGrip->GrippedObject))
 		{
 			if(MyGun->HasBoltReleaseOnPrimaryGrip())
 			{
@@ -1703,9 +1690,9 @@ void ATVRCharacter::OnActionB_Pressed(UGripMotionControllerComponent* UsingHand)
 			}
 		}
 	}
-	else if(bIsSecondaryGrip)
+	else if(GetOtherControllerHand(UsingHand)->GetIsSecondaryAttachment(UsingHand, SecondaryGripInfo))
 	{
-		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(GripInfo.GrippedObject))
+		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(SecondaryGripInfo.GrippedObject))
 		{
 			MyGun->ToggleLaser(UsingHand);
 		}
@@ -1729,25 +1716,20 @@ void ATVRCharacter::OnActionB_Pressed(UGripMotionControllerComponent* UsingHand)
 void ATVRCharacter::OnActionA_Released(UGripMotionControllerComponent* UsingHand)
 {
 	check(UsingHand);
-	TArray<FBPActorGripInformation> AllGrips;
 	FBPActorGripInformation GripInfo;
 	
-	UsingHand->GetAllGrips(AllGrips);
-	
-	const bool bIsPrimaryGrip = AllGrips.Num() > 0;
-	const bool bIsSecondaryGrip = GetOtherControllerHand(UsingHand)->GetIsSecondaryAttachment(UsingHand, GripInfo);
-	if(bIsPrimaryGrip)
+	if(const auto PrimaryGrip = UsingHand->GetFirstActiveGrip())
 	{		
-		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(AllGrips[0].GrippedObject))
+		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(PrimaryGrip->GrippedObject))
 		{
 			MyGun->OnMagReleaseReleasedFromPrimary();
 		}
-		else if(ATVRMagazine* MyMag = Cast<ATVRMagazine>(AllGrips[0].GrippedObject))
+		else if(ATVRMagazine* MyMag = Cast<ATVRMagazine>(PrimaryGrip->GrippedObject))
 		{
 			MyMag->OnMagReleaseReleased();
 		}
 	}
-	else if(bIsSecondaryGrip)
+	else if(GetOtherControllerHand(UsingHand)->GetIsSecondaryAttachment(UsingHand, GripInfo))
 	{
 		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(GripInfo.GrippedObject))
 		{
@@ -1775,16 +1757,11 @@ void ATVRCharacter::OnActionA_Released(UGripMotionControllerComponent* UsingHand
 void ATVRCharacter::OnActionB_Released(UGripMotionControllerComponent* UsingHand)
 {
 	check(UsingHand);
-	TArray<FBPActorGripInformation> AllGrips;
-	FBPActorGripInformation GripInfo;
+	FBPActorGripInformation SecondaryGrip;
 	
-	UsingHand->GetAllGrips(AllGrips);
-	
-	const bool bHasPrimaryGrip = AllGrips.Num() > 0;
-	const bool bHasSecondaryGrip = GetOtherControllerHand(UsingHand)->GetIsSecondaryAttachment(UsingHand, GripInfo);
-	if(bHasPrimaryGrip)
+	if(const auto PrimaryGrip = UsingHand->GetFirstActiveGrip())
 	{		
-		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(AllGrips[0].GrippedObject))
+		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(PrimaryGrip->GrippedObject))
 		{
 			if(MyGun->HasBoltReleaseOnPrimaryGrip())
 			{
@@ -1792,9 +1769,9 @@ void ATVRCharacter::OnActionB_Released(UGripMotionControllerComponent* UsingHand
 			}
 		}
 	}
-	else if(bHasSecondaryGrip)
+	else if(GetOtherControllerHand(UsingHand)->GetIsSecondaryAttachment(UsingHand, SecondaryGrip))
 	{
-		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(GripInfo.GrippedObject))
+		if(ATVRGunBase* MyGun = Cast<ATVRGunBase>(SecondaryGrip.GrippedObject))
 		{
 			MyGun->OnSecondaryBoltReleaseReleased();
 		}
@@ -1831,13 +1808,11 @@ void ATVRCharacter::OnCycleFireMode_Right()
 
 void ATVRCharacter::OnCycleFireMode(UGripMotionControllerComponent* UsingHand)
 {
-	TArray<FBPActorGripInformation> AllGrips;
 	if(UsingHand != nullptr)
 	{
-		UsingHand->GetAllGrips(AllGrips);
-		if(AllGrips.Num() > 0)
+		if(const auto PrimaryGrip = UsingHand->GetFirstActiveGrip())
 		{
-			ATVRGunBase* MyGun = Cast<ATVRGunBase>(AllGrips[0].GrippedObject);
+			ATVRGunBase* MyGun = Cast<ATVRGunBase>(PrimaryGrip->GrippedObject);
 			if(MyGun != nullptr)
 			{
 				MyGun->OnCycleFiringMode();

@@ -39,6 +39,11 @@ public:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+	virtual void Destroyed() override;
+	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -66,10 +71,7 @@ public:
 	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
 	void SetVariant(uint8 Variant);
 	UFUNCTION(Category = "Weapon Attachment", BlueprintCallable)
-	void SetColorVariant(uint8 Variant);
-
-
-	
+	void SetColorVariant(uint8 Variant);	
 	
 	/**
 	 * Allows to pick another class to replace this attachment altogether for different rail types.
@@ -98,16 +100,17 @@ public:
 	virtual float GetRecoilModifier_Implementation() const {return 1.f;}
 	
 	UFUNCTION(Category= "Weapon Attachment", BlueprintCallable, BlueprintNativeEvent)
-	float GetSprayModifier() const;
-	virtual float GetSprayModifier_Implementation() const {return 1.f;}
-	
-	UFUNCTION(Category= "Weapon Attachment", BlueprintCallable, BlueprintNativeEvent)
-	float GetDamageModifier() const;
-	virtual float GetDamageModifier_Implementation() const {return 1.f;}
+	float GetAccuracyModifier() const;
+	virtual float GetAccuracyModifier_Implementation() const {return 1.f;}
 	
 	UFUNCTION(Category= "Weapon Attachment", BlueprintCallable, BlueprintNativeEvent)
 	float GetMuzzleVelocityModifier() const;
 	virtual float GetMuzzleVelocityModifier_Implementation() const {return 1.f;}
+	
+	UFUNCTION(Category= "Weapon Attachment", BlueprintCallable, BlueprintNativeEvent)
+	float GetRateOfFireModifier() const;
+	virtual float GetRateOfFireModifier_Implementation() const {return 1.f;}
+	
 	
 	template<class T> 
 	T* GetAttachmentPoint() const
@@ -124,8 +127,6 @@ public:
 	
 protected:
 	TSubclassOf<UStaticMeshComponent> StaticMeshClass;
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
 	virtual void InitAttachments();
 

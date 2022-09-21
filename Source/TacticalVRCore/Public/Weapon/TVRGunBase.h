@@ -31,6 +31,7 @@ enum class ETVRGunClass : uint8
     Rifle
 };
 
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGunSecondaryUsedDelegate);
 
 /**
@@ -81,6 +82,7 @@ protected:
 	UPROPERTY()
 	TArray<class UStaticMeshComponent*> GunMeshes;
 	TArray<class UTVRAttachmentPoint*> AttachmentPoints;
+	TArray<class ATVRWeaponAttachment*> Attachments;
 
 	UPROPERTY()
 	class UStaticMeshComponent* BoltMesh;
@@ -375,7 +377,8 @@ public:
     bool IsBoltLocked() const {return bIsBoltLocked;}
 
 	const TArray<UTVRAttachmentPoint*>& GetAttachmentPoints() const { return AttachmentPoints; }
-
+	const TArray<ATVRWeaponAttachment*>& GetAttachments() const { return Attachments; }
+	
 	template<class T> 
 	T* GetAttachmentPoint() const
 	{
@@ -402,6 +405,7 @@ public:
     	}
     	return nullptr;
     }
+	
 
 	UFUNCTION(Category="Gun", BlueprintImplementableEvent)
 	void OnBarrelChanged(TSubclassOf<class AWPNA_Barrel> NewBarrel);
@@ -477,6 +481,10 @@ public:
 
 	UFUNCTION(Category="Gun", BlueprintCallable)
 	bool IsBoltOpen() const { return BoltProgress >= BoltProgressEjectRound; }
+
+	void OnAttachmentAttached(class ATVRWeaponAttachment* NewAttachment, class UTVRAttachmentPoint* AttachmentPoint);
+	void OnAttachmentDetached(class ATVRWeaponAttachment* OldAttachment, class UTVRAttachmentPoint* AttachmentPoint);
+	
 	
 protected:
 
