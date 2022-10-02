@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/BoxComponent.h"
+#include "Interfaces/TVRMagazineInterface.h"
 #include "TVRMagazineCompInterface.generated.h"
 
 /**
@@ -13,7 +14,7 @@ UCLASS(Abstract,
 	hideCategories = (ComponentTick, Navigation, Physics, Collision), 
 	ClassGroup = (TacticalVR)
 )
-class TACTICALVRCORE_API UTVRMagazineCompInterface : public UBoxComponent
+class TACTICALVRCORE_API UTVRMagazineCompInterface : public UBoxComponent, public ITVRMagazineInterface
 {
 	GENERATED_BODY()
 
@@ -38,25 +39,4 @@ public:
 	 */
 	UFUNCTION()
 	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-
-	virtual bool CanFeedAmmo() const {return false;}
-	virtual TSubclassOf<class ATVRCartridge> TryFeedAmmo() {return nullptr;}
-
-	virtual void SetMagazineCollisionProfile(FName NewProfile) {}
-
-	virtual bool CanBoltLock() const {return false;}
-
-	virtual bool IsEmpty() const {return true;}
-
-	virtual void OnMagReleasePressed(bool bAlternatePress = false) {}
-	virtual void OnMagReleaseReleased(bool bAlternatePress = false) {}
-
-	UFUNCTION(Category = "Magazine", BlueprintCallable)
-	virtual bool IsMagReleasePressed() const {return false;}
-
-	virtual float GetAmmoInsertProgress() {return 0;}
-
-	virtual void OnOwnerGripReleased(class ATVRCharacter* OwningChar, class UGripMotionControllerComponent*);
-
-	virtual void GetAllowedCatridges(TArray<TSubclassOf<class ATVRCartridge>>& OutCartridges) const;
 };

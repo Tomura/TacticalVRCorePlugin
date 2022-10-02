@@ -1,40 +1,65 @@
-// This file is covered by the LICENSE file in the root of this plugin.
+// Copyright (c) 2020 Tammo Beil. All rights reserved.
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapon/Component/TVRMagazineCompInterface.h"
-#include "Components/SplineComponent.h"
+#include "Components/BoxComponent.h"
+#include "Components/ChildActorComponent.h"
+#include "Weapon/TVRMagazine.h"
+#include "Interfaces/TVRMagazineInterface.h"
+#include "TVRMagazineWell.generated.h"
 
-#include "TVRMagWellComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSimpleMagazineWellDelegate);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMagazineStartInsertDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMagazineFullyInsertedDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMagazineFullyDroppedDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMagazineStartDropDelegate);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMagReleasePressedDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnMagReleaseReleasedDelegate);
 /**
  * 
  */
 UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent), ClassGroup = (TacticalVR))
-class TACTICALVRCORE_API UTVRMagWellComponent : public UTVRMagazineCompInterface
+class TACTICALVRCORE_API UTVRMagazineWell : public UChildActorComponent, public ITVRMagazineInterface
 {
 	GENERATED_BODY()
 
+	UPROPERTY()
+	class UBoxComponent* CollisionBox;
 
 	UPROPERTY()
 	class UAudioComponent* MagAudioComp;
 	
 public:
-	UTVRMagWellComponent(const FObjectInitializer& OI);
+	UTVRMagazineWell(const FObjectInitializer& OI);
 
+	FVector GetEjectLocation() const { return GetComponentTransform().TransformPosition(EjectRelativeLoc);}
+	const FVector& GetEjectRelativeLocation() const { return EjectRelativeLoc;}
+	FVector GetCollisionExtent() const { return CollisionExtent;}
+	FTransform GetCollisionTransform() const { return CollisionRelativeTransform * GetComponentTransform(); }
+
+	UPROPERTY(Category="Magazine Well", EditDefaultsOnly)
+	FVector CollisionExtent;
+	UPROPERTY(Category="Magazine Well", EditDefaultsOnly)
+	FTransform CollisionRelativeTransform;
+	
+	UPROPERTY(Category="Magazine Well", EditDefaultsOnly)
+	FVector EjectRelativeLoc;
+		
+protected:
+	virtual void CreateChildActor() override;
+
+	virtual void OnRegister() override;
+	virtual void OnUnregister() override;
+
+	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
+	
+	
+public:
 	virtual void BeginPlay() override;
 	virtual void BeginDestroy() override;
-	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction * ThisTickFunction) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	class ATVRGunBase* GetGunOwner() const;
+
+	void InitChildMag();
+	
 	// ================================================
 	// Start MagazineComponentInterface
 	// ================================================
@@ -74,8 +99,8 @@ public:
 	// ================================================
 	// End MagazineComponentInterface
 	// ================================================
-	
-    /**
+
+	/**
      * Overlap Event. Bound to the BeginOverlap delegate.
      * @param OverlappedComponent Component that is overlapping (should be this component)
      * @param OtherActor The actors that is overlapping with the magwell
@@ -84,13 +109,7 @@ public:
      * @param bFromSweep Whether the overlap was triggered by a sweep
      * @param SweepResult Sweep result
      */
-	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult) override;
-	
-    /**
-     * @returns a pointer to the magazine spline
-     */
-	USplineComponent* GetMagSpline() const;
-	USplineComponent* FindMagSpline() const;
+	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 	
 
     /**
@@ -109,13 +128,12 @@ public:
 
 	virtual void OnMagDestroyed();
 
+	virtual void OnMagFullyInserted();
+	
 	/**
 	 * @returns True if the magazine is fully ejected, i.e. left the magwell and is not constrained by it anymore.
 	 */
 	virtual bool ShouldEjectMag() const;
-
-
-    virtual void OnMagFullyInserted();
     
     virtual bool ShouldInsertMag() const;
 
@@ -127,12 +145,12 @@ public:
 	/**
 	 * Check if a magazine is currently in the Magwell.
 	 */
-	virtual bool HasMagazine() const;
+	virtual bool HasMagazine() const {return CurrentMagazine != nullptr;}
 
     /**
     * Check if a magazine is currently in the Magwell.
     */
-    virtual bool HasFullyInsertedMagazine() const;
+    virtual bool HasFullyInsertedMagazine() const { return HasMagazine() && !bIsMagFree; }
     
 	/**
 	 * Tries to Release the Mag.
@@ -145,7 +163,7 @@ public:
 	 * @param TestClass Class to test
 	 * @returns True of the class is an allowed magazine type
 	 */
-	virtual bool IsAllowedMagType(UClass* TestClass) const;
+	virtual bool IsAllowedMagType(UClass* TestClass) const {return AllowedMagazines.Find(TestClass) != INDEX_NONE;}
 
 	/**
 	 * Returns the currently inserted magazine. If no magazine was inserted it will return nullptr.
@@ -154,35 +172,31 @@ public:
 	 * @returns Pointer to the current Magazine
 	 */
     UFUNCTION(Category = "Magazine", BlueprintCallable)
-	virtual class ATVRMagazine* GetCurrentMagazine() const;
+	virtual class ATVRMagazine* GetCurrentMagazine() const {return CurrentMagazine;}
 
 
     virtual bool IsMagReleasePressed_Implementation() const override;
 
-	virtual void GetSplineTransform(const FVector& inLoc, FTransform& outTransform) const;
-	virtual void GetSplineTransformAtTime(float inProgress, FTransform& outTransform) const;
+	virtual float GetSplineTransform(const FVector& inLoc, FTransform& outTransform) const;
 
 	UPROPERTY(Category = "Magazine", BlueprintAssignable)
-	FOnMagazineFullyDroppedDelegate EventOnMagazineFullyDropped;
+	FSimpleMagazineWellDelegate EventOnMagazineFullyDropped;
 	UPROPERTY(Category = "Magazine", BlueprintAssignable)
-	FOnMagazineFullyInsertedDelegate EventOnMagazineFullyInserted;
+	FSimpleMagazineWellDelegate EventOnMagazineFullyInserted;
 	UPROPERTY(Category = "Magazine", BlueprintAssignable)
-	FOnMagazineStartDropDelegate EventOnMagazineStartDrop;
+	FSimpleMagazineWellDelegate EventOnMagazineStartDrop;
 	UPROPERTY(Category = "Magazine", BlueprintAssignable)
-	FOnMagazineStartInsertDelegate EventOnMagazineStartInsert;
+	FSimpleMagazineWellDelegate EventOnMagazineStartInsert;
 	UPROPERTY(Category = "Magazine", BlueprintAssignable)
-	FOnMagReleasePressedDelegate EventOnMagReleasePressed;
+	FSimpleMagazineWellDelegate EventOnMagReleasePressed;
 	UPROPERTY(Category = "Magazine", BlueprintAssignable)
-	FOnMagReleaseReleasedDelegate EventOnMagReleaseReleased;
+	FSimpleMagazineWellDelegate EventOnMagReleaseReleased;
 
 	bool HasMagRelease() const {return bHasMagRelease;}
 
-	UFUNCTION(Category="Magazine", BlueprintCallable)
-	virtual class ATVRMagazine* SpawnMagazineAttached(TSubclassOf<ATVRMagazine> MagazineClass = nullptr);
+	TSubclassOf<class ATVRMagazine> DefaultMagazineClass;
 
-	TSubclassOf<ATVRMagazine> DefaultMagazineClass;
-
-	virtual void GetAllowedCatridges_Implementation(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const override;
+	virtual void GetAllowedCatridges_Implementation(TArray<TSubclassOf<class ATVRCartridge>>& OutCartridges) const override;
 	
 protected:
 	virtual void StartInsertMagazine(class ATVRMagazine* MagToInsert);
@@ -190,17 +204,6 @@ protected:
     /** Reference to the current magazine. Check Validitiy if you want to be safe. */
 	UPROPERTY()
 	class ATVRMagazine* CurrentMagazine;
-
-    /**
-     * Spline Component that marks the path from the Mag Attach Point to the end of the magwell.
-     * The first point marks the mag attach point.
-     * The last point marks the point at which the mag is not constrained anymore.
-     * The transform of the spline shall be setup so that the tangents (X-axis) points outside of the mag well.
-     * The Z axis of each point shall point forward.
-     * During mag drop the magazine will be facing this way.
-     */
-	UPROPERTY()
-	class USplineComponent* CachedMagSpline;
 
     /** Returns true of the mag is being dropped right now */
 	bool bIsMagFree;
@@ -234,4 +237,5 @@ protected:
 	/** Allowed Magazines that can be inserted into this magwell */
 	UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditDefaultsOnly)
 	TArray<TSubclassOf<ATVRMagazine> > AllowedMagazines;
+
 };

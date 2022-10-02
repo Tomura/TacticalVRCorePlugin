@@ -3,8 +3,13 @@
 #include "Weapon/TVRMagazine.h"
 
 #include "TacticalCollisionProfiles.h"
+#include "TacticalTraceChannels.h"
+#include "Libraries/TVRFunctionLibrary.h"
 #include "Player/TVREquipmentPoint.h"
+#include "Player/TVRGraspingHand.h"
 #include "Weapon/TVRGunBase.h"
+#include "Weapon/TVRGunWithChild.h"
+#include "Weapon/Component/TVRMagazineWell.h"
 #include "Weapon/Component/TVRMagWellComponent.h"
 
 ATVRMagazine::ATVRMagazine(const FObjectInitializer& OI) : Super(OI)
@@ -23,6 +28,12 @@ ATVRMagazine::ATVRMagazine(const FObjectInitializer& OI) : Super(OI)
     MagazineCollider->SetCollisionProfileName(COLLISION_MAGAZINE_INSERT);
     MagazineCollider->InitBoxExtent(FVector(2.8f, 0.8f, 0.8f));
     MagazineCollider->ShapeColor = FColor::Turquoise;
+
+	DropCollider = CreateDefaultSubobject<UBoxComponent>(FName("DropCollider"));
+    DropCollider->SetupAttachment(GetStaticMeshComponent());
+    DropCollider->SetCollisionProfileName(COLLISION_NO_COLLISION);
+    DropCollider->InitBoxExtent(FVector(1.5f, 2.f, 2.f));
+    DropCollider->ShapeColor = FColor::Green;
 
 	RoundsInstances = CreateDefaultSubobject<UInstancedStaticMeshComponent>("RoundsInstances");
     RoundsInstances->SetupAttachment(GetStaticMeshComponent());
@@ -93,7 +104,14 @@ void ATVRMagazine::Destroyed()
 {
 	if(IsInserted())
 	{
-		AttachedMagWell->OnMagDestroyed();
+		if(const auto MagWell = Cast<UTVRMagWellComponent>(AttachedMagWell))
+		{
+			MagWell->OnMagDestroyed();
+		}
+		else if(const auto MagWell2 = Cast<UTVRMagazineWell>(AttachedMagWell))
+		{
+			MagWell2->OnMagDestroyed();
+		}
 	}
 	OnMagReleaseReleased();
 	Super::Destroyed();
@@ -215,7 +233,7 @@ void ATVRMagazine::OnMagFullyEjected(const FVector& AngularVelocity, const FVect
     BP_OnMagFullyEjected();
 }
 
-bool ATVRMagazine::TryAttachToWeapon(USceneComponent* AttachComponent, UTVRMagWellComponent* MagWell, const FTransform& AttachTransform)
+bool ATVRMagazine::TryAttachToWeapon(USceneComponent* AttachComponent, UTVRMagWellComponent* MagWell, const FTransform& AttachTransform, float Progress)
 {
     if(!IsInserted())
     {
@@ -225,19 +243,96 @@ bool ATVRMagazine::TryAttachToWeapon(USceneComponent* AttachComponent, UTVRMagWe
         GetStaticMeshComponent()->AttachToComponent(AttachComponent, AttachRule);
         
         ReInitGrip();
-        
-        SetMagazineOriginToTransform(AttachTransform);   
+        SetMagazineOriginToTransform(AttachTransform);
+    	MagInsertPercentage = Progress;
+    	
         return true;
     }
     return false;
 }
 
+bool ATVRMagazine::TryAttachToWeapon(USceneComponent* AttachComponent, UTVRMagazineWell* MagWell,
+	const FTransform& AttachTransform, const float Progress)
+{
+	if(!IsInserted())
+	{
+		AttachedMagWell = MagWell;
+        
+		const FAttachmentTransformRules AttachRule(EAttachmentRule::KeepWorld, true);
+		GetStaticMeshComponent()->AttachToComponent(AttachComponent, AttachRule);
+        
+		ReInitGrip();
+		SetMagazineOriginToTransform(AttachTransform);
+		MagInsertPercentage = Progress;
+    	
+		return true;
+	}
+	return false;
+}
+
+void ATVRMagazine::SetMagazineOriginToTransform(const FTransform& NewTransform, bool bSweep, FTransform& outTransform)
+{
+	const FTransform OriginTransform = AttachOrigin->GetRelativeTransform();
+	const FTransform NewTransformWS = OriginTransform.Inverse() * NewTransform;
+	if(bSweep && AttachedMagWell)
+	{
+		TArray<FHitResult> SweepArray;
+		FHitResult SweepResult;
+		
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
+		if(const auto Gun = Cast<ATVRGunBase>(AttachedMagWell->GetOwner()))
+		{
+			QueryParams.AddIgnoredActor(Gun);
+			TArray<AActor*> OwnerChildren;
+			Gun->GetAllChildActors(OwnerChildren);
+			QueryParams.AddIgnoredActors(OwnerChildren);
+			if(Gun->GetPrimaryController())
+			{				
+				if(const auto Hand = UTVRFunctionLibrary::GetGraspingHandForController(Gun->GetPrimaryController()))
+				{					
+					QueryParams.AddIgnoredActor(Hand);
+				}
+			}
+			if(const auto ParentGun = Gun->GetParentGun())
+			{
+				QueryParams.AddIgnoredActor(ParentGun);
+				Gun->GetAllChildActors(OwnerChildren);
+			}
+			QueryParams.AddIgnoredActors(OwnerChildren);
+		}	
+		const FVector StartLoc = DropCollider->GetComponentLocation();
+		const FVector EndLoc = NewTransformWS.TransformPosition(DropCollider->GetRelativeLocation());
+		const FVector SweepDir = (EndLoc - StartLoc).GetSafeNormal();
+		const FVector RelLocWS = NewTransformWS.TransformVector(DropCollider->GetRelativeLocation());
+
+		constexpr float MoveBackDistance = 0.5f;
+		
+		if(GetWorld()->SweepSingleByChannel(
+			SweepResult,
+			StartLoc - (SweepDir * MoveBackDistance), EndLoc,
+			DropCollider->GetComponentRotation().Quaternion(),
+			ECC_WeaponObjectChannel,
+			DropCollider->GetCollisionShape(0.25),
+			QueryParams))
+		 {
+			const FVector SweepLoc = SweepResult.Location - RelLocWS;
+			const FTransform SweepedTF(NewTransformWS.GetRotation(), SweepLoc);
+			
+			SetActorTransform(SweepedTF, false);
+			outTransform = OriginTransform * SweepedTF;
+			return;
+		}
+	}
+	SetActorTransform(NewTransformWS, false);
+	outTransform = NewTransform;
+}
+
 void ATVRMagazine::SetMagazineOriginToTransform(const FTransform& NewTransform)
 {
-    const FTransform MeshTransform = GetStaticMeshComponent()->GetComponentTransform();
-    const FTransform OriginTransform = AttachOrigin->GetComponentTransform();
-
-    SetActorTransform(MeshTransform * OriginTransform.Inverse() * NewTransform);    
+	const FTransform OriginTransform = AttachOrigin->GetRelativeTransform();
+	const FTransform NewTransformWS = OriginTransform.Inverse() * NewTransform;
+	SetActorTransform(NewTransformWS, false);
 }
 
 bool ATVRMagazine::IsInserted() const
@@ -296,19 +391,19 @@ bool ATVRMagazine::IsMagReleasePressed() const
 
 void ATVRMagazine::OnMagReleasePressed()
 {
-	if(IsInserted() && !bIsMagReleasePressed && AttachedMagWell->HasMagRelease())
+	if(IsInserted() && !bIsMagReleasePressed && HasMagWellMagRelease())
 	{
-		AttachedMagWell->OnMagReleasePressed(true);
+		ITVRMagazineInterface::Execute_OnMagReleasePressed(AttachedMagWell, true);
 		bIsMagReleasePressed = true;
 	}
 }
 
 void ATVRMagazine::OnMagReleaseReleased()
 {
-	if(IsInserted() && bIsMagReleasePressed && AttachedMagWell->HasMagRelease())
+	if(IsInserted() && bIsMagReleasePressed && HasMagWellMagRelease())
 	{
 		bIsMagReleasePressed = false;
-		AttachedMagWell->OnMagReleaseReleased(true);
+		ITVRMagazineInterface::Execute_OnMagReleaseReleased(AttachedMagWell, true);
 	}
 }
 
@@ -418,4 +513,20 @@ int32 ATVRMagazine::GetDisplayAmmo() const
 		return CurrentAmmo;
 	}
 	return FMath::Min(LimitDisplayAmmo, CurrentAmmo);
+}
+
+bool ATVRMagazine::HasMagWellMagRelease() const
+{
+	if(AttachedMagWell)
+	{
+		if(const auto MagWell = Cast<UTVRMagWellComponent>(AttachedMagWell))
+		{
+			return MagWell->HasMagRelease();
+		}
+		if(const auto MagWell2 = Cast<UTVRMagazineWell>(AttachedMagWell))
+		{
+			return MagWell2->HasMagRelease();
+		}
+	}
+	return false;
 }

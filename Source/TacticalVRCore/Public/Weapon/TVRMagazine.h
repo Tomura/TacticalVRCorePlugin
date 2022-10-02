@@ -27,6 +27,9 @@ class TACTICALVRCORE_API ATVRMagazine : public AGrippableStaticMeshActor, public
 	UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditDefaultsOnly, meta=(AllowPrivateAccess=true))
 	UBoxComponent* MagazineCollider;
 	
+	UPROPERTY(Category="Gun", BlueprintReadOnly, EditDefaultsOnly, meta=(AllowPrivateAccess=true))
+	UBoxComponent* DropCollider;
+	
 public:
     ATVRMagazine(const FObjectInitializer& OI);
 
@@ -95,10 +98,14 @@ public:
      * @param AttachComponent Component of the weapon to attach the magazine to
      * @param MagWell Corresponding Magwell
      * @param AttachTransform Transform that the magazines Attach Origin shall be attached to
+     * @param Progress Insertion Progress 1 = fully attached
      */
     virtual bool TryAttachToWeapon(USceneComponent* AttachComponent,
 		class UTVRMagWellComponent* MagWell,
-        const FTransform& AttachTransform);
+        const FTransform& AttachTransform, const float Progress);
+	virtual bool TryAttachToWeapon(USceneComponent* AttachComponent,
+	class UTVRMagazineWell* MagWell,
+	const FTransform& AttachTransform, const float Progress);
 
     /**
      * Moves the Magazine so that the Transform of the Attach Origin Component aligns with the argument.
@@ -106,6 +113,7 @@ public:
      * @param NewTransform Transform in World Space to align the Attach Origin to.
      */
     UFUNCTION(Category = "Magazine", BlueprintCallable)
+    virtual void SetMagazineOriginToTransform(const FTransform& NewTransform, bool bSweep, FTransform& outTransform);
     virtual void SetMagazineOriginToTransform(const FTransform& NewTransform);
 
     /**
@@ -219,7 +227,7 @@ public:
 	 * @returns the mag well the magazine is inserted into or null if the magazine is free
 	 */
 	UFUNCTION(Category="Magazine", BlueprintCallable)
-	UTVRMagWellComponent* GetAttachedMagWell()  const { return AttachedMagWell; }
+	USceneComponent* GetAttachedMagWell()  const { return AttachedMagWell; }
 
 	/**
 	 * Returns a number between 0 adn 1 where 0 means the magazine is free and 1 means the magazine is fully inserted.
@@ -281,6 +289,7 @@ public:
 
 	int32 GetDisplayAmmo() const;
 
+	bool HasMagWellMagRelease() const;
 	
 	
 protected:
@@ -315,7 +324,7 @@ protected:
     bool bIsAttached;
 	
 	UPROPERTY(Category="Magazine", BlueprintReadOnly)
-	class UTVRMagWellComponent* AttachedMagWell;
+	class USceneComponent* AttachedMagWell;
 
     /** Scene Component that marks the Slot the hand is gripping */
     UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditAnywhere)

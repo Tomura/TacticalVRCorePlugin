@@ -325,7 +325,7 @@ public:
 	void InitChargingHandle();
 	
 	UFUNCTION(Category = "Gun", BlueprintCallable)
-	class UTVRMagazineCompInterface* GetMagInterface() const {return MagInterface;}
+	UActorComponent* GetMagInterface() const {return MagInterface;}
 
 	virtual void EjectRound(bool bSpent=true);
 	UFUNCTION(Category = "Gun", BlueprintImplementableEvent)
@@ -562,7 +562,7 @@ protected:
 	ETVRHandSwapType HandSwapType;
 		
 	UPROPERTY(Category = "Gun", EditDefaultsOnly)
-	class UTVRMagazineCompInterface* MagInterface;
+	UActorComponent* MagInterface;
 	
 	UPROPERTY(Category = "Gun|Recoil", BlueprintReadOnly, EditDefaultsOnly)
 	FVector RecoilImpulse;

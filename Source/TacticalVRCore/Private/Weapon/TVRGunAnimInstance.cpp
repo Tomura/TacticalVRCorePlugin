@@ -68,9 +68,9 @@ void UTVRGunAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     		bSelectorInitialized = true;
     	}
 
-    	if(UTVRMagazineCompInterface* MagInterface = Gun->GetMagInterface())
+    	if(const auto MagInterface = Gun->GetMagInterface())
     	{
-    		MagInsertionProgress = MagInterface->GetAmmoInsertProgress();
+    		MagInsertionProgress = ITVRMagazineInterface::Execute_GetAmmoInsertProgress(MagInterface);
     	}
     	else
     	{

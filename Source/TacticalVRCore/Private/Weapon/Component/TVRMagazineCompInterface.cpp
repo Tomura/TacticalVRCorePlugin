@@ -42,11 +42,3 @@ void UTVRMagazineCompInterface::OnBeginOverlap(UPrimitiveComponent* OverlappedCo
                                                UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 }
-
-void UTVRMagazineCompInterface::OnOwnerGripReleased(ATVRCharacter* OwningChar, class UGripMotionControllerComponent*)
-{
-}
-
-void UTVRMagazineCompInterface::GetAllowedCatridges(TArray<TSubclassOf<class ATVRCartridge>>& OutCartridges) const
-{
-}

@@ -46,7 +46,8 @@ namespace UnrealBuildTool.Rules
 					"UnrealEd",
 					"EditorStyle",
 					"AssetRegistry",
-					"PropertyEditor"
+					"PropertyEditor",
+					"ComponentVisualizers"
 				}
 			);
 

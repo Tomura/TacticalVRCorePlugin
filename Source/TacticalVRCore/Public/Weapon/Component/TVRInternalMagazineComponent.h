@@ -41,10 +41,10 @@ public:
 	*/
     virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult) override;
 
-	virtual bool IsEmpty() const override;
-	virtual bool CanFeedAmmo() const override;
-	virtual TSubclassOf<class ATVRCartridge> TryFeedAmmo() override;
-	virtual bool CanBoltLock() const override;
+	virtual bool IsEmpty_Implementation() const override;
+	virtual bool CanFeedAmmo_Implementation() const override;
+	virtual TSubclassOf<class ATVRCartridge> TryFeedAmmo_Implementation() override;
+	virtual bool CanBoltLock_Implementation() const override;
 	
 	// ================================================
 	// Start MagazineComponentInterface
@@ -59,7 +59,7 @@ public:
 	virtual bool CanInsertAmmo() const;
 	virtual bool IsFull() const;
 
-	virtual void GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const override;
+	virtual void GetAllowedCatridges_Implementation(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const override;
 	
 protected:
 	

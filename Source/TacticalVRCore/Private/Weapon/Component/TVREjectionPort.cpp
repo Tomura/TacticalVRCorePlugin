@@ -57,12 +57,6 @@ void UTVREjectionPort::OnComponentDestroyed(bool bDestroyingHierarchy)
 		EjectAudioComp = nullptr;
 	}
 	
-	if(EjectionArrow)
-	{
-		EjectionArrow->DestroyComponent();
-		EjectionArrow = nullptr;
-	}
-
 	bDoNotRespawnPool = true;
 	
 	for(uint8 i = 0; i < CartridgePool.Num(); i++)
@@ -76,55 +70,6 @@ void UTVREjectionPort::OnComponentDestroyed(bool bDestroyingHierarchy)
 	CartridgePool.Empty();
 }
 
-#if WITH_EDITOR
-
-void UTVREjectionPort::OnRegister()
-{
-#if WITH_EDITORONLY_DATA
-	if(EjectionArrow == nullptr && GetOwner())
-	{
-		EjectionArrow = NewObject<UArrowComponent>(GetOwner(), NAME_None, RF_Transactional | RF_TextExportTransient);
-		if(EjectionArrow)
-		{
-			EjectionArrow->SetupAttachment(this);
-			EjectionArrow->SetHiddenInGame(true);
-			EjectionArrow->RegisterComponentWithWorld(GetWorld());
-			EjectionArrow->ArrowSize = 0.2f;
-			EjectionArrow->SetArrowColor(FLinearColor::Red);
-			EjectionArrow->SetRelativeTransform(EjectionDir);
-		}
-	} 
-#endif
-	
-	Super::OnRegister();
-}
-
-void UTVREjectionPort::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	if (EjectionArrow && PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVREjectionPort, EjectionDir))
-	{
-		EjectionArrow->SetRelativeTransform(EjectionDir);
-	}
-	
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-}
-
-void UTVREjectionPort::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
-{
-	if (EjectionArrow && PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UTVREjectionPort, EjectionDir))
-	{
-		EjectionArrow->SetRelativeTransform(EjectionDir);
-	}
-	
-	Super::PostEditChangeChainProperty(PropertyChangedEvent);
-}
-
-void UTVREjectionPort::PostEditUndo()
-{
-	Super::PostEditUndo();
-}
-
-#endif
 
 void UTVREjectionPort::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -248,10 +193,10 @@ void UTVREjectionPort::OnPooledCartridgeDestroyed(AActor* PooledCatridge)
 	}
 }
 
-void UTVREjectionPort::LinkMagComp(UTVRMagazineCompInterface* MagInterface)
+void UTVREjectionPort::LinkMagComp(UObject* MagInterface)
 {
 	AllowedCatridges.Empty();
-	MagInterface->GetAllowedCatridges(AllowedCatridges);
+	ITVRMagazineInterface::Execute_GetAllowedCatridges(MagInterface, AllowedCatridges);
 }
 
 void UTVREjectionPort::TryLoadChamber(ATVRCartridge* Cartridge)

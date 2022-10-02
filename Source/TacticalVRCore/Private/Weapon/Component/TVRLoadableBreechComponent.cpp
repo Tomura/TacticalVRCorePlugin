@@ -155,39 +155,39 @@ void ULoadableBreechComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	}
 }
 
-void ULoadableBreechComponent::SetMagazineCollisionProfile(FName NewProfile)
+void ULoadableBreechComponent::SetMagazineCollisionProfile_Implementation(FName NewProfile)
 {
 	Super::SetMagazineCollisionProfile(NewProfile);
 }
 
-bool ULoadableBreechComponent::CanBoltLock() const
+bool ULoadableBreechComponent::CanBoltLock_Implementation() const
 {
 	return false;
 }
 
-bool ULoadableBreechComponent::IsEmpty() const
+bool ULoadableBreechComponent::IsEmpty_Implementation() const
 {
 	return CurrentCartridge == nullptr;
 }
 
-float ULoadableBreechComponent::GetAmmoInsertProgress()
+float ULoadableBreechComponent::GetAmmoInsertProgress_Implementation() const
 {
 	return GetCurrentCartridge() ? Progress : 0.f;
 }
 
 
-void ULoadableBreechComponent::OnOwnerGripReleased(ATVRCharacter* OwningChar,
+void ULoadableBreechComponent::OnOwnerGripReleased_Implementation(ATVRCharacter* OwningChar,
 	UGripMotionControllerComponent* ReleasingHand)
 {
 	Super::OnOwnerGripReleased(OwningChar, ReleasingHand);
 }
 
-bool ULoadableBreechComponent::CanFeedAmmo() const
+bool ULoadableBreechComponent::CanFeedAmmo_Implementation() const
 {
 	return GetCurrentCartridge() != nullptr;
 }
 
-TSubclassOf<ATVRCartridge> ULoadableBreechComponent::TryFeedAmmo()
+TSubclassOf<ATVRCartridge> ULoadableBreechComponent::TryFeedAmmo_Implementation()
 {
 	return GetCurrentCartridge()->GetClass();
 }
@@ -308,7 +308,7 @@ bool ULoadableBreechComponent::IsAllowedAmmo(TSubclassOf<ATVRCartridge> Cartridg
 	return AllowedCartridges.Find(CartridgeClass) != INDEX_NONE;
 }
 
-void ULoadableBreechComponent::GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const
+void ULoadableBreechComponent::GetAllowedCatridges_Implementation(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const
 {
 	OutCartridges.Append(AllowedCartridges);
 }

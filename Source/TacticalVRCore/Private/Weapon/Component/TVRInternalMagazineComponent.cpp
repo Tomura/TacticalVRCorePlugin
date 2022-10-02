@@ -61,7 +61,7 @@ bool UTVRInternalMagazineComponent::IsFull() const
 	return InsertedAmmo.Num() >= Capacity;
 }
 
-void UTVRInternalMagazineComponent::GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const
+void UTVRInternalMagazineComponent::GetAllowedCatridges_Implementation(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const
 {
 	OutCartridges.Append(CompatibleAmmo);
 }
@@ -79,19 +79,19 @@ void UTVRInternalMagazineComponent::BeginPlay()
 	}
 }
 
-bool UTVRInternalMagazineComponent::IsEmpty() const
+bool UTVRInternalMagazineComponent::IsEmpty_Implementation() const
 {
 	return InsertedAmmo.Num() <= 0;
 }
 
-bool UTVRInternalMagazineComponent::CanFeedAmmo() const
+bool UTVRInternalMagazineComponent::CanFeedAmmo_Implementation() const
 {
-	return !IsEmpty();
+	return !Execute_IsEmpty(this);
 }
 
-TSubclassOf<ATVRCartridge> UTVRInternalMagazineComponent::TryFeedAmmo()
+TSubclassOf<ATVRCartridge> UTVRInternalMagazineComponent::TryFeedAmmo_Implementation()
 {
-	if(CanFeedAmmo())
+	if(Execute_CanFeedAmmo(this))
 	{
 		TSubclassOf<ATVRCartridge> ReturnCartridge = InsertedAmmo.Last();
 		InsertedAmmo.RemoveAt(InsertedAmmo.Num() - 1);
@@ -100,9 +100,9 @@ TSubclassOf<ATVRCartridge> UTVRInternalMagazineComponent::TryFeedAmmo()
 	return nullptr;
 }
 
-bool UTVRInternalMagazineComponent::CanBoltLock() const
+bool UTVRInternalMagazineComponent::CanBoltLock_Implementation() const
 {
-	return IsEmpty();
+	return Execute_IsEmpty(this);
 }
 
 void UTVRInternalMagazineComponent::BeginInsertCartridge(ATVRCartridge* Cartridge)

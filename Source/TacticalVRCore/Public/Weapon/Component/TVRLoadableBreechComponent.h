@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <stdbool.h>
-
 #include "CoreMinimal.h"
 #include "TVRGunFireComponent.h"
 #include "TVRMagazineCompInterface.h"
@@ -57,31 +55,31 @@ public:
 	 * Changes the collision profile of all relevant meshes (anything that isn't a helper but a physical collider)
 	 * @param NewProfile Name of the new collision profile
 	 */
-	virtual void SetMagazineCollisionProfile(FName NewProfile) override;
+	virtual void SetMagazineCollisionProfile_Implementation(FName NewProfile) override;
 
 	/**
 	 * @returns True if the conditions are met from the magazine side for the bolt to be locked.
 	 */
-	virtual bool CanBoltLock() const override;
+	virtual bool CanBoltLock_Implementation() const override;
 	
 	/**
 	 * @returns True if the attached magazine is empty.
 	 */
-	virtual bool IsEmpty() const override;
+	virtual bool IsEmpty_Implementation() const override;
 
 	/**
 	 * @returns number between 0 and 1, where 1 means magazine is fully inserted
 	 */
-	virtual float GetAmmoInsertProgress() override;
+	virtual float GetAmmoInsertProgress_Implementation() const override;
 
 
-	virtual void OnOwnerGripReleased(ATVRCharacter* OwningChar, class UGripMotionControllerComponent* ReleasingHand) override;
+	virtual void OnOwnerGripReleased_Implementation(ATVRCharacter* OwningChar, class UGripMotionControllerComponent* ReleasingHand) override;
 	/**
 	 * @returns True if Ammo can be fed from the magazine to the weapon
 	 */
-	virtual bool CanFeedAmmo() const override;
+	virtual bool CanFeedAmmo_Implementation() const override;
 
-	virtual TSubclassOf<class ATVRCartridge> TryFeedAmmo() override;
+	virtual TSubclassOf<class ATVRCartridge> TryFeedAmmo_Implementation() override;
 	
 
 	/**
@@ -136,7 +134,7 @@ public:
 	UFUNCTION(Category="Weapon", BlueprintCallable)
 	bool IsAllowedAmmo(TSubclassOf<ATVRCartridge> CartridgeClass) const;
 
-	virtual void GetAllowedCatridges(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const override;
+	virtual void GetAllowedCatridges_Implementation(TArray<TSubclassOf<ATVRCartridge>>& OutCartridges) const override;
 	
 protected:
 	virtual void BeginInsertCartridge(class ATVRCartridge* CartridgeToInsert);

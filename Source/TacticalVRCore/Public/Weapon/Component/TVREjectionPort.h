@@ -15,21 +15,12 @@ UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent), ClassGroup = (Tactic
 class TACTICALVRCORE_API UTVREjectionPort : public UBoxComponent
 {
 	GENERATED_BODY()
-
-	UPROPERTY()
-	class UArrowComponent* EjectionArrow;
 	
 public:
 	UTVREjectionPort(const FObjectInitializer& OI);
 	virtual void BeginPlay() override;
 	virtual void OnComponentDestroyed(bool bDestroyingHierarchy) override;
-
-#if WITH_EDITOR
-	virtual void OnRegister() override;
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-	virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent) override;
-	virtual void PostEditUndo() override;
-#endif
+	
 
 	/**
 	* Overlap Event. Bound to the BeginOverlap delegate.
@@ -56,7 +47,7 @@ public:
 	virtual void OnPooledCartridgeDestroyed(AActor* PooledCatridge);
 
 	UFUNCTION(Category="Ejection", BlueprintCallable)
-	virtual void LinkMagComp(class UTVRMagazineCompInterface* MagInterface);
+	virtual void LinkMagComp(UObject* MagInterface);
 	
 protected:
 	virtual void TryLoadChamber(ATVRCartridge* Cartridge);

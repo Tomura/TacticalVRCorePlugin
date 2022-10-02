@@ -10,5 +10,10 @@ public:
 
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+	virtual void RegisterComponentVisualizer(FName ComponentClassName, TSharedPtr<class FComponentVisualizer> Visualizer);
+	
+	/** Array of component class names we have registered, so we know what to unregister afterwards */
+	TArray<FName> RegisteredComponentClassNames;
 };
 

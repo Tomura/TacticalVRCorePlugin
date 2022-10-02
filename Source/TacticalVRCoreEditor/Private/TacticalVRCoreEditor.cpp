@@ -2,7 +2,12 @@
 
 #include "TacticalVRCoreEditor.h"
 #include "TVRAttachPointDetails.h"
+#include "TVREjectionPortVisualizer.h"
 #include "TVRGunDetails.h"
+#include "TVRMagazineWellVisualizer.h"
+#include "Editor/UnrealEdEngine.h"
+#include "UnrealEdGlobals.h"
+#include "ComponentVisualizers/Public/ComponentVisualizers.h"
 
 IMPLEMENT_MODULE(FTacticalVRCoreEditorModule, TacticalVRCoreEditor);
 
@@ -40,6 +45,10 @@ void FTacticalVRCoreEditorModule::StartupModule()
 		"TVRGunBase",
 		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRGunDetails::MakeInstance));
 	PropertyModule.NotifyCustomizationModuleChanged();
+
+	RegisterComponentVisualizer(UTVRMagazineWell::StaticClass()->GetFName(), FTVRMagazineWellVisualizer::MakeInstance());
+	RegisterComponentVisualizer(UTVREjectionPort::StaticClass()->GetFName(), FTVREjectionPortVisualizer::MakeInstance());
+	
 }
 
 void FTacticalVRCoreEditorModule::ShutdownModule()
@@ -55,4 +64,28 @@ void FTacticalVRCoreEditorModule::ShutdownModule()
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Stock");
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Barrel");
 	PropertyModule.UnregisterCustomClassLayout("TVRGunBase");
+	
+	if (GUnrealEd != nullptr)
+	{
+		for(const auto TestName : RegisteredComponentClassNames)
+		{
+			GUnrealEd->UnregisterComponentVisualizer(TestName);
+		}
+	}
+}
+
+void FTacticalVRCoreEditorModule::RegisterComponentVisualizer(FName ComponentClassName,
+	TSharedPtr<FComponentVisualizer> Visualizer)
+{
+	if (GUnrealEd != nullptr)
+	{
+		GUnrealEd->RegisterComponentVisualizer(ComponentClassName, Visualizer);
+	}
+
+	RegisteredComponentClassNames.Add(ComponentClassName);
+
+	if (Visualizer.IsValid())
+	{
+		Visualizer->OnRegister();
+	}
 }

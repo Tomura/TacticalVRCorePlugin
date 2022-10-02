@@ -596,7 +596,7 @@ void ATVRGunBase::SetCollisionProfile_Implementation(FName NewProfile)
 
 	if(GetMagInterface())
 	{
-		GetMagInterface()->SetMagazineCollisionProfile(NewProfile);
+		ITVRMagazineInterface::Execute_SetMagazineCollisionProfile(GetMagInterface(), NewProfile);
 	}
 
 	for(UTVRAttachmentPoint* TestPoint : AttachmentPoints)
@@ -616,7 +616,7 @@ void ATVRGunBase::OnFullyDropped(ATVRCharacter* GrippingCharacter, UGripMotionCo
 	SetOwner(nullptr);
 	if(GetMagInterface())
 	{
-		GetMagInterface()->OnOwnerGripReleased(GrippingCharacter, GrippingHand);
+		ITVRMagazineInterface::Execute_OnOwnerGripReleased(GetMagInterface(), GrippingCharacter, GrippingHand);
 	}
 	BPOnFullyDropped();
 }
@@ -1118,7 +1118,7 @@ void ATVRGunBase::OnMagReleasePressed()
 {
 	if(GetMagInterface())
 	{
-		GetMagInterface()->OnMagReleasePressed();
+		ITVRMagazineInterface::Execute_OnMagReleasePressed(GetMagInterface(), false);
 	}
 	BP_OnMagReleasePressed();
 }
@@ -1127,7 +1127,7 @@ void ATVRGunBase::OnMagReleaseReleased()
 {
     if(GetMagInterface())
     {
-        GetMagInterface()->OnMagReleaseReleased();
+		ITVRMagazineInterface::Execute_OnMagReleaseReleased(GetMagInterface(), false);
     }
     BP_OnMagReleaseReleased();
 }
@@ -1171,10 +1171,10 @@ bool ATVRGunBase::OnSecondaryBoltReleaseReleased()
 
 void ATVRGunBase::InitMagInterface_Implementation()
 {
-	const auto FoundComp = GetComponentByClass(UTVRMagazineCompInterface::StaticClass());
-	if(FoundComp)
+	const auto FoundComp = GetComponentsByInterface(UTVRMagazineInterface::StaticClass());	
+	if(FoundComp.Num() > 0)
 	{
-		MagInterface = Cast<UTVRMagazineCompInterface>(FoundComp);
+		MagInterface = FoundComp[0];
 	}
 }
 
@@ -1226,7 +1226,7 @@ bool ATVRGunBase::TryFeedRoundFromMagazine()
 {
 	if(!GetFiringComponent()->HasRoundLoaded() && GetMagInterface())
 	{
-		if(const auto NewCartridge = GetMagInterface()->TryFeedAmmo())
+		if(const auto NewCartridge = ITVRMagazineInterface::Execute_TryFeedAmmo(GetMagInterface()))
 		{
 			return TryChamberNewRound(NewCartridge);
 		}
@@ -1345,7 +1345,7 @@ bool ATVRGunBase::IsMagReleasePressed() const
 {
     if(GetMagInterface())
     {
-        return GetMagInterface()->IsMagReleasePressed();
+        return ITVRMagazineInterface::Execute_IsMagReleasePressed(GetMagInterface());
     }
     return false;
 }
@@ -1429,7 +1429,10 @@ void ATVRGunBase::OnBoltClosed()
 
 void ATVRGunBase::LockBoltIfNecessary()
 {
-	const bool bShouldLastRoundBHO = HasLastRoundBoltHoldOpen() && GetMagInterface() && GetMagInterface()->CanBoltLock() &&  !GetFiringComponent()->HasRoundLoaded();
+	const bool bShouldLastRoundBHO = HasLastRoundBoltHoldOpen() &&
+		GetMagInterface() &&
+		ITVRMagazineInterface::Execute_CanBoltLock(GetMagInterface()) &&
+		!GetFiringComponent()->HasRoundLoaded();
 	if((bShouldLastRoundBHO || ShouldLockBolt()) && !IsBoltReleasePressed())
 	{
 		LockBolt();
@@ -1438,7 +1441,11 @@ void ATVRGunBase::LockBoltIfNecessary()
 
 void ATVRGunBase::UnlockBoltIfNecessary()
 {
-	const bool bUndoBHO = HasLastRoundBoltHoldOpen() && (!GetMagInterface() || !GetMagInterface()->CanBoltLock() || GetFiringComponent()->HasRoundLoaded());
+	const bool bUndoBHO = HasLastRoundBoltHoldOpen() && (
+		!GetMagInterface() ||
+		!ITVRMagazineInterface::Execute_CanBoltLock(GetMagInterface()) ||
+		GetFiringComponent()->HasRoundLoaded()
+	);
 	const bool bUnlockBoltOverride = !HasLastRoundBoltHoldOpen() && !ShouldLockBolt();
 	if(IsBoltLocked() && (bUndoBHO || bUnlockBoltOverride))
 	{
