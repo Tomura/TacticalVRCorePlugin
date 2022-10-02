@@ -21,6 +21,9 @@
 
 UTVRMagazineWell::UTVRMagazineWell(const FObjectInitializer& OI)
 {
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
+	
 	EjectRelativeLoc = FVector(0.f, 0.f, -1.f);
 	CollisionExtent = FVector::OneVector;
 
@@ -40,6 +43,9 @@ UTVRMagazineWell::UTVRMagazineWell(const FObjectInitializer& OI)
 	bHasMagRelease = false;
 	DefaultMagazineClass = nullptr;
 	MagEjectAcceleration = 0.f;
+
+	bCanDetach = false;
+	DetachProgress = 0.f;
 }
 
 
@@ -78,7 +84,8 @@ void UTVRMagazineWell::BeginPlay()
 	Super::BeginPlay();
 	if(MagazineSound && !MagAudioComp)
 	{
-		MagAudioComp = NewObject<UAudioComponent>(this);
+		MagAudioComp = NewObject<UAudioComponent>(this, FName(TEXT("MagazineAudio")));
+		MagAudioComp->RegisterComponent();
 		MagAudioComp->bAutoActivate = false;
 		MagAudioComp->SetSound(MagazineSound);
 		MagAudioComp->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
@@ -86,13 +93,16 @@ void UTVRMagazineWell::BeginPlay()
 
 	if(!CollisionBox)
 	{
-		CollisionBox = NewObject<UBoxComponent>(this);
+		CollisionBox = NewObject<UBoxComponent>(this, FName(TEXT("CollisionBox")));
+		CollisionBox->RegisterComponent();
 		CollisionBox->AttachToComponent(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 		CollisionBox->SetRelativeTransform(CollisionRelativeTransform);
 		CollisionBox->SetBoxExtent(CollisionExtent);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		CollisionBox->SetCollisionProfileName(COLLISION_MAGAZINE_INSERT, false);
+		CollisionBox->SetGenerateOverlapEvents(true);
+		CollisionBox->OnComponentBeginOverlap.AddDynamic(this, &UTVRMagazineWell::OnBeginOverlap);
 	}
-	CollisionBox->OnComponentBeginOverlap.AddDynamic(this, &UTVRMagazineWell::OnBeginOverlap);
 	
 	InitChildMag();
 }
@@ -169,7 +179,7 @@ float UTVRMagazineWell::GetAmmoInsertProgress_Implementation() const
 {
 	if(const ATVRMagazine* const Mag = GetCurrentMagazine())
 	{
-		return Mag->MagInsertPercentage;
+		return Mag->GetInsertProgress();
 	}
 	return  0.f;
 }
@@ -251,10 +261,13 @@ void UTVRMagazineWell::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, 
 {
 	if(const auto Gun = GetGunOwner())
 	{
-		if(CanInsertMag())
+		if(const auto Mag = Cast<ATVRMagazine>(OtherActor))
 		{
-			ATVRMagazine* Mag = Cast<ATVRMagazine>(OtherActor);
-			if(Mag != nullptr && IsAllowedMagType(Mag->GetClass()) && Mag->VRGripInterfaceSettings.bIsHeld)
+			if(CanInsertMag() &&
+				IsAllowedMagType(Mag->GetClass()) &&
+				Mag->VRGripInterfaceSettings.bIsHeld &&
+				Mag != IgnoreMagazine
+			)
 			{
 				StartInsertMagazine(Mag);
 			}
@@ -271,6 +284,11 @@ void UTVRMagazineWell::HandleMagDrop(float DeltaSeconds)
 		{
 			const bool bEjectMag = ShouldEjectMag();
 			const bool bInsertMag = ShouldInsertMag();
+
+			if(CurrentMagazine->GetInsertProgress() > 0.f && DetachProgress == 0.f)
+			{
+				DetachProgress = 0.f;
+			}
 	        
 			if(!bEjectMag && !bInsertMag)
 			{
@@ -329,39 +347,55 @@ void UTVRMagazineWell::HandleMagFall(float DeltaSeconds)
 	const FVector ExternalVelocity = Gun->GetStaticMeshComponent()->GetPhysicsLinearVelocityAtPoint(GetComponentLocation());
 	const FVector DesiredMagLocInternal = MagLoc + (MagVelocity) * DeltaSeconds;
 	const FVector DesiredMagLoc = DesiredMagLocInternal - ExternalVelocity * DeltaSeconds;
-	
-	FTransform FoundTransform;
-	GetSplineTransform(DesiredMagLoc, FoundTransform);
-	CurrentMagazine->SetMagazineOriginToTransform(FoundTransform, true, FoundTransform);
-	// refine transform again
-	const float Progress = GetSplineTransform(FoundTransform.GetLocation(), FoundTransform);
-	MagVelocity = (FoundTransform.GetLocation() - MagLoc)/DeltaSeconds;
-	
-	CurrentMagazine->MagInsertPercentage = Progress;
 
+	FTransform FoundTransform;
+	float Progress = GetSplineTransform(DesiredMagLoc, FoundTransform);
+	if(CurrentMagazine->SetMagazineOriginToTransform(FoundTransform, true, FoundTransform))
+	{
+		Progress = GetSplineTransform(FoundTransform.GetLocation(), FoundTransform);
+		MagVelocity = (FoundTransform.GetLocation() - MagLoc)/DeltaSeconds;
+	}	
+	MagVelocity = (FoundTransform.GetLocation() - MagLoc)/DeltaSeconds;
+	CurrentMagazine->MagInsertPercentage = Progress;
 }
 
 void UTVRMagazineWell::OnMagFullyEjected()
 {
-	if(HasMagazine())
+	const ATVRGunBase* Gun = GetGunOwner();    
+	if(HasMagazine() && Gun)
 	{
-		bWasReleasedByHand = false;
-		CurrentMagazine->SetMagazineOriginToTransform(GetComponentTransform());
-		CurrentMagazine->MagInsertPercentage = 1.f;
-		bIsMagFree = false;
-
-		if(MagAudioComp)
-		{
-			MagAudioComp->Stop();
-			MagAudioComp->SetIntParameter(FName("MagEvent"), MAG_AUDIO_FullyInserted);
-			MagAudioComp->Play();
-		}
+		ATVRMagazine* OldMag = CurrentMagazine;    
+		bIsMagFree= false;
+		CurrentMagazine = nullptr;
+        
+		const FVector EjectVelocity = MagVelocity;
+		const FVector PhysicsVelocity = Gun->GetStaticMeshComponent()->GetPhysicsLinearVelocity();
+		const FVector MagFallDir = (GetEjectLocation() - GetComponentLocation()).GetSafeNormal();
+		
+		const FVector A = PhysicsVelocity - (PhysicsVelocity | MagFallDir) * MagFallDir;
+		const FVector MagLinearVelocity = A + EjectVelocity;
+		const FVector MagAngularVelocity = Gun->GetStaticMeshComponent()->GetPhysicsAngularVelocityInDegrees();
     	
-		if(EventOnMagazineFullyInserted.IsBound())
+		if(EventOnMagazineFullyDropped.IsBound())
 		{
-			EventOnMagazineFullyInserted.Broadcast();
+			EventOnMagazineFullyDropped.Broadcast();
 		}
+		OldMag->OnMagFullyEjected(MagAngularVelocity, MagLinearVelocity);
+
+		IgnoreMagazine = OldMag;
+		GetWorld()->GetTimerManager().SetTimer(IgnoreMagTimer, this, &UTVRMagazineWell::StopIgnoreMag, 1.f, false);
 	}
+	else
+	{
+		// in this case we only modify the variables
+		bIsMagFree= false;
+		CurrentMagazine = nullptr;
+	}
+}
+
+void UTVRMagazineWell::StopIgnoreMag()
+{
+	IgnoreMagazine = nullptr;
 }
 
 void UTVRMagazineWell::OnMagDestroyed()
@@ -398,7 +432,7 @@ bool UTVRMagazineWell::ShouldEjectMag() const
 	if(HasMagazine())
 	{
 		const float Progress = GetCurrentMagazine()->GetInsertProgress();
-		return Progress <= 0.f; 
+		return Progress <= DetachProgress;
 	}
 	return true;
 }
@@ -432,9 +466,9 @@ bool UTVRMagazineWell::CanInsertMag() const
 	}
 
 	if (AActor* GunParent = Gun->GetAttachParentActor()) // for cornershot
-		{
+	{
 		return Cast<ATVRGunBase>(GunParent) != nullptr;
-		}
+	}
 	return false;
 }
 
@@ -488,6 +522,8 @@ void UTVRMagazineWell::StartInsertMagazine(ATVRMagazine* MagToInsert)
 	FTransform FoundTransform;
 	const float NewProgress = GetSplineTransform(
 		MagToInsert->GetAttachOrigin()->GetComponentLocation(), FoundTransform);
+	UE_LOG(LogTemp, Log, TEXT("Starting Insert at Progress: %f"), NewProgress);
+	DetachProgress = FMath::Min(0.f, NewProgress - 0.01f);
 	if(MagToInsert->TryAttachToWeapon(Gun->GetStaticMeshComponent(), this, FoundTransform, NewProgress))
 	{
 		bIsMagFree = true;
@@ -512,20 +548,20 @@ float UTVRMagazineWell::GetSplineTransform(const FVector& inLoc, FTransform& out
 	const FVector StartLocWS = GetComponentLocation();
 	
 	FVector ClosestPoint = UKismetMathLibrary::FindClosestPointOnSegment(
-		inLoc, StartLocWS, EjectLocWS);
+		inLoc, StartLocWS, EjectLocWS + EjectLocWS - StartLocWS);
 	
 	const float EjectLengthSq = (EjectLocWS - StartLocWS).SizeSquared();	
-	const float Progress = ((ClosestPoint - StartLocWS) | (EjectLocWS - StartLocWS)) / EjectLengthSq;
-	FRotator Rot = GetComponentRotation();
+	const float Progress = ((ClosestPoint - EjectLocWS) | (StartLocWS - EjectLocWS)) / EjectLengthSq;
+	FQuat Rot = GetComponentRotation().Quaternion();
 	if(bUseCurve)
 	{	
 		const float Roll = MagRoll.GetRichCurveConst()->Eval(Progress);
 		const float Pitch = MagPitch.GetRichCurveConst()->Eval(Progress);
 		const float Yaw = MagYaw.GetRichCurveConst()->Eval(Progress);
-		Rot = FRotator(Pitch, Yaw, Roll);
+		Rot = Rot * FRotator(Pitch, Yaw, Roll).Quaternion();
 	}
 	outTransform = FTransform(Rot, ClosestPoint);
-	return FMath::Clamp(Progress, 0.f, 1.f);
+	return FMath::Min(Progress, 1.f);
 }
 
 
@@ -533,4 +569,14 @@ void UTVRMagazineWell::TickComponent(float DeltaTime, ELevelTick TickType,
                                      FActorComponentTickFunction* ThisTickFunction)
 {
     HandleMagDrop(DeltaTime);
+	if(IgnoreMagazine)
+	{
+		const FVector MagLoc = IgnoreMagazine->GetAttachOrigin()->GetComponentLocation();
+		const FVector EjectLoc = GetEjectLocation();
+		if(FVector::DistSquared(MagLoc, EjectLoc) > 10.f)
+		{
+			IgnoreMagazine = nullptr;
+			GetWorld()->GetTimerManager().ClearTimer(IgnoreMagTimer);
+		}
+	}
 }

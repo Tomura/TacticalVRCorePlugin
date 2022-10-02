@@ -270,7 +270,7 @@ bool ATVRMagazine::TryAttachToWeapon(USceneComponent* AttachComponent, UTVRMagaz
 	return false;
 }
 
-void ATVRMagazine::SetMagazineOriginToTransform(const FTransform& NewTransform, bool bSweep, FTransform& outTransform)
+bool ATVRMagazine::SetMagazineOriginToTransform(const FTransform& NewTransform, bool bSweep, FTransform& outTransform)
 {
 	const FTransform OriginTransform = AttachOrigin->GetRelativeTransform();
 	const FTransform NewTransformWS = OriginTransform.Inverse() * NewTransform;
@@ -321,18 +321,20 @@ void ATVRMagazine::SetMagazineOriginToTransform(const FTransform& NewTransform, 
 			
 			SetActorTransform(SweepedTF, false);
 			outTransform = OriginTransform * SweepedTF;
-			return;
+			return true;
 		}
 	}
 	SetActorTransform(NewTransformWS, false);
 	outTransform = NewTransform;
+	return false;
 }
 
-void ATVRMagazine::SetMagazineOriginToTransform(const FTransform& NewTransform)
+bool ATVRMagazine::SetMagazineOriginToTransform(const FTransform& NewTransform)
 {
 	const FTransform OriginTransform = AttachOrigin->GetRelativeTransform();
 	const FTransform NewTransformWS = OriginTransform.Inverse() * NewTransform;
 	SetActorTransform(NewTransformWS, false);
+	return false;
 }
 
 bool ATVRMagazine::IsInserted() const

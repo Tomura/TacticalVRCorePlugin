@@ -35,8 +35,12 @@ void UTVREjectionPort::BeginPlay()
 	Super::BeginPlay();
 	PopulateCartridgePool();
 	OnComponentBeginOverlap.AddDynamic(this, &UTVREjectionPort::OnBeginOverlap);
-	const auto MagComp = GetOwner()->FindComponentByClass<UTVRMagazineCompInterface>();
-	LinkMagComp(MagComp);
+
+	TArray<UActorComponent*> MagInterfaces = GetOwner()->GetComponentsByInterface(UTVRMagazineInterface::StaticClass());
+	if(MagInterfaces.Num() > 0 )
+	{		
+		LinkMagComp(MagInterfaces[0]);
+	}
 
 	if(EjectSound && EjectAudioComp == nullptr)
 	{

@@ -111,10 +111,13 @@ public:
      * Moves the Magazine so that the Transform of the Attach Origin Component aligns with the argument.
      * This way we are independent from the Meshes Transform
      * @param NewTransform Transform in World Space to align the Attach Origin to.
+     * @param bSweep Sweep the movement path?
+     * @param outTransform output transform where the magazine ends up being in world space
+     * @returns whether something was hit
      */
     UFUNCTION(Category = "Magazine", BlueprintCallable)
-    virtual void SetMagazineOriginToTransform(const FTransform& NewTransform, bool bSweep, FTransform& outTransform);
-    virtual void SetMagazineOriginToTransform(const FTransform& NewTransform);
+    virtual bool SetMagazineOriginToTransform(const FTransform& NewTransform, bool bSweep, FTransform& outTransform);
+    virtual bool SetMagazineOriginToTransform(const FTransform& NewTransform);
 
     /**
      * @returns True if the magazine is inserted into an weapon
