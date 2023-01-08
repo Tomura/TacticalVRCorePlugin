@@ -5,9 +5,9 @@
 #include "TVREjectionPortVisualizer.h"
 #include "TVRGunDetails.h"
 #include "TVRMagazineWellVisualizer.h"
+#include "TVRMagWellDetails.h"
 #include "Editor/UnrealEdEngine.h"
 #include "UnrealEdGlobals.h"
-#include "ComponentVisualizers/Public/ComponentVisualizers.h"
 
 IMPLEMENT_MODULE(FTacticalVRCoreEditorModule, TacticalVRCoreEditor);
 
@@ -40,15 +40,16 @@ void FTacticalVRCoreEditorModule::StartupModule()
 	PropertyModule.RegisterCustomClassLayout(
 		"TVRAttachPoint_Barrel",
 		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRAttachPointBarrelDetails::MakeInstance));
-
 	PropertyModule.RegisterCustomClassLayout(
 		"TVRGunBase",
-		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRGunDetails::MakeInstance));
+		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRGunDetails::MakeInstance));	
+	PropertyModule.RegisterCustomClassLayout(
+		UTVRMagazineWell::StaticClass()->GetFName(),
+		FOnGetDetailCustomizationInstance::CreateStatic(&FTVRMagWellDetails::MakeInstance));
 	PropertyModule.NotifyCustomizationModuleChanged();
 
 	RegisterComponentVisualizer(UTVRMagazineWell::StaticClass()->GetFName(), FTVRMagazineWellVisualizer::MakeInstance());
-	RegisterComponentVisualizer(UTVREjectionPort::StaticClass()->GetFName(), FTVREjectionPortVisualizer::MakeInstance());
-	
+	RegisterComponentVisualizer(UTVREjectionPort::StaticClass()->GetFName(), FTVREjectionPortVisualizer::MakeInstance());	
 }
 
 void FTacticalVRCoreEditorModule::ShutdownModule()
@@ -64,6 +65,7 @@ void FTacticalVRCoreEditorModule::ShutdownModule()
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Stock");
 	PropertyModule.UnregisterCustomClassLayout("TVRAttachPoint_Barrel");
 	PropertyModule.UnregisterCustomClassLayout("TVRGunBase");
+	PropertyModule.UnregisterCustomClassLayout(UTVRMagazineWell::StaticClass()->GetFName());
 	
 	if (GUnrealEd != nullptr)
 	{
@@ -74,8 +76,9 @@ void FTacticalVRCoreEditorModule::ShutdownModule()
 	}
 }
 
+
 void FTacticalVRCoreEditorModule::RegisterComponentVisualizer(FName ComponentClassName,
-	TSharedPtr<FComponentVisualizer> Visualizer)
+                                                              TSharedPtr<FComponentVisualizer> Visualizer)
 {
 	if (GUnrealEd != nullptr)
 	{

@@ -36,6 +36,7 @@
 #include "Weapon/Component/TVRChargingHandleInterface.h"
 #include "Weapon/Component/TVREjectionPort.h"
 #include "Weapon/Component/TVRGunFireComponent.h"
+#include "Weapon/Component/TVRMagazineWell.h"
 
 FName ATVRGunBase::PrimarySlotName(TEXT("Primary"));
 FName ATVRGunBase::SecondarySlotName(TEXT("Secondary"));
@@ -141,6 +142,13 @@ void ATVRGunBase::OnConstruction(const FTransform& Transform)
 	
 	OnColorVariantChanged(ColorVariant);
 	InitAttachmentPoints();
+
+	TArray<UTVRMagazineWell*> MagWells;
+	GetComponents<UTVRMagazineWell>(MagWells);
+	for(const auto MW : MagWells)
+	{
+		MW->OnConstruction();
+	}
 
 	if(bForceRecompile)
 	{

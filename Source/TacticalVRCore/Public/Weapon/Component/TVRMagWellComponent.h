@@ -23,8 +23,7 @@ UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent), ClassGroup = (Tactic
 class TACTICALVRCORE_API UTVRMagWellComponent : public UTVRMagazineCompInterface
 {
 	GENERATED_BODY()
-
-
+	
 	UPROPERTY()
 	class UAudioComponent* MagAudioComp;
 	

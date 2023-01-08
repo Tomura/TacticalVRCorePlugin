@@ -22,8 +22,11 @@ FTVRGunDetails::FTVRGunDetails()
 
 void FTVRGunDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 {
-	IDetailCategoryBuilder& Cat = DetailBuilder.EditCategory(TEXT("Weapon Attachments"));
-
+	IDetailCategoryBuilder& Cat = DetailBuilder.EditCategory(
+		TEXT("Weapon Attachments"),
+		FText::GetEmpty(),
+		ECategoryPriority::TypeSpecific);
+	
 	TArray< TWeakObjectPtr< UObject > > Objects;
 	DetailBuilder.GetObjectsBeingCustomized(Objects);
 	TSharedRef<IPropertyHandle> RecompileHelperProp = DetailBuilder.GetProperty(GET_MEMBER_NAME_CHECKED(ATVRGunBase, bForceRecompile));

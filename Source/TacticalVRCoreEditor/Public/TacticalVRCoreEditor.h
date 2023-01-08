@@ -15,5 +15,6 @@ public:
 	
 	/** Array of component class names we have registered, so we know what to unregister afterwards */
 	TArray<FName> RegisteredComponentClassNames;
+	TArray<FName> RegisteredDetailCustomizers;
 };
 

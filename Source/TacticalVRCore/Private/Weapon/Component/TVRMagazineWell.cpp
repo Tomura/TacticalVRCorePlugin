@@ -41,7 +41,7 @@ UTVRMagazineWell::UTVRMagazineWell(const FObjectInitializer& OI)
 	bWasReleasedByHand = true;
 	bNeedsToBeReleasedByHand = false;
 	bHasMagRelease = false;
-	DefaultMagazineClass = nullptr;
+	MagazineClass = nullptr;
 	MagEjectAcceleration = 0.f;
 
 	bCanDetach = false;
@@ -104,7 +104,99 @@ void UTVRMagazineWell::BeginPlay()
 		CollisionBox->OnComponentBeginOverlap.AddDynamic(this, &UTVRMagazineWell::OnBeginOverlap);
 	}
 	
-	InitChildMag();
+	SpawnMagazineAttached(MagazineClass);
+}
+
+ATVRMagazine* UTVRMagazineWell::SpawnMagazineAttached(TSubclassOf<ATVRMagazine> NewMagazineClass)
+{
+	const auto MagClass = GetChildActorClass();
+	if(GetChildActor())
+	{
+		DestroyChildActor();
+	}
+
+	ATVRMagazine* MyMag = nullptr;
+	const auto& TempChildren = GetAttachChildren();
+	for(const auto TestChild : TempChildren)
+	{
+		if(const auto TestMag = Cast<ATVRMagazine>(TestChild->GetOwner()))
+		{
+			TestMag->Destroy();
+		}
+	}
+	
+	if(const auto World = GetWorld())
+	{
+		if(const auto Gun = GetGunOwner())
+		{
+			if(NewMagazineClass == nullptr)
+			{
+				if(AllowedMagazines.Num() > 0)
+				{
+					NewMagazineClass = AllowedMagazines[0];
+				}
+				else
+				{
+					return nullptr;
+				}
+			}
+			if(IsAllowedMagType(NewMagazineClass) && GetWorld())
+			{
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				SpawnParams.bAllowDuringConstructionScript = false;
+				// in theory we could allow spawn during construction script, but it would require addtional code like child actor components
+				
+				auto NewMag = World->SpawnActor<ATVRMagazine>(NewMagazineClass, SpawnParams);
+				if(NewMag)
+				{
+					NewMag->TryAttachToWeapon(Gun->GetStaticMeshComponent(), this, GetComponentTransform(), 1.f);
+					CurrentMagazine = NewMag;
+					OnMagFullyInserted();
+					return NewMag;
+				}
+			}
+		}
+	}
+	return nullptr;
+}
+
+bool UTVRMagazineWell::SetMagazineClass(TSubclassOf<ATVRMagazine> NewClass)
+{
+	if(NewClass == nullptr)
+	{
+		MagazineClass = nullptr;
+		// OnConstruction();
+		return true;
+	}	
+
+	if(IsAllowedMagType(NewClass))
+	{
+		MagazineClass = NewClass;
+		// OnConstruction();
+		return true;
+	}
+	return false;
+}
+
+void UTVRMagazineWell::OnConstruction()
+{
+	if(!HasBegunPlay())
+	{
+		if(MagazineClass && MagazineClass != GetChildActorClass())
+		{
+			SetChildActorClass(MagazineClass);
+		}
+		else if (MagazineClass == nullptr) // firsts condition fails on null
+		{
+			SetChildActorClass(nullptr);
+		}
+	}
+	
+	if(!IsTemplate() && CurrentMagazine) // this can create a double execution of setPreferredVariant, but it should be ok
+	{
+		// CurrentMagazine->SetColorVariant(GetRequestedColorVariant());
+	}
 }
 
 void UTVRMagazineWell::BeginDestroy()
@@ -326,7 +418,7 @@ void UTVRMagazineWell::HandleMagInsert(float DeltaSeconds)
 	
 	FTransform QueryTransform = MagOrigin * MagSlot.Inverse() * HandTransform;
 	
-	const float Progress = GetSplineTransform(QueryTransform.GetLocation(), QueryTransform);
+	const float Progress = GetConstrainedTransform(QueryTransform.GetLocation(), QueryTransform);
 	
 	MagVelocity = (QueryTransform.GetLocation() - MagOrigin.GetLocation())/DeltaSeconds;
 	CurrentMagazine->SetMagazineOriginToTransform(QueryTransform);
@@ -335,28 +427,42 @@ void UTVRMagazineWell::HandleMagInsert(float DeltaSeconds)
 
 void UTVRMagazineWell::HandleMagFall(float DeltaSeconds)
 {
+	constexpr float ExternalVelStrength = 0.5f;
 	const ATVRGunBase* Gun = GetGunOwner();
+	const FVector EjectDir = (GetEjectLocation() - GetComponentLocation()).GetSafeNormal();
+	
 	const auto MagCoM = CurrentMagazine->GetCenterOfMass();	
 	const auto RotVel = Gun->GetStaticMeshComponent()->GetPhysicsAngularVelocityInRadians();
 	const auto CentrifugalAcc = RotVel ^ (RotVel ^ (Gun->GetActorLocation()-MagCoM));
 	
 	const float DropAcceleration = GetWorld()->GetGravityZ();
-	MagVelocity = MagVelocity + (FVector::UpVector * DropAcceleration + CentrifugalAcc) * DeltaSeconds;
+	const FVector Acceleration = EjectDir * ((FVector::UpVector * DropAcceleration + CentrifugalAcc) | EjectDir);
+	MagVelocity = MagVelocity + Acceleration * DeltaSeconds;
 	MagVelocity -= GetUpVector() * MagEjectAcceleration * DeltaSeconds;
+	MagVelocity = (MagVelocity | EjectDir) * EjectDir;
+	
 	const FVector MagLoc = GetCurrentMagazine()->GetAttachOrigin()->GetComponentLocation();
 	const FVector ExternalVelocity = Gun->GetStaticMeshComponent()->GetPhysicsLinearVelocityAtPoint(GetComponentLocation());
+	const FVector ConstrainedExtVel = (ExternalVelStrength * ExternalVelocity | EjectDir) * EjectDir;
 	const FVector DesiredMagLocInternal = MagLoc + (MagVelocity) * DeltaSeconds;
-	const FVector DesiredMagLoc = DesiredMagLocInternal - ExternalVelocity * DeltaSeconds;
+	const FVector DesiredMagLoc = DesiredMagLocInternal - ConstrainedExtVel * DeltaSeconds;
 
 	FTransform FoundTransform;
-	float Progress = GetSplineTransform(DesiredMagLoc, FoundTransform);
+	float Progress = GetConstrainedTransform(DesiredMagLoc, FoundTransform);
+	
 	if(CurrentMagazine->SetMagazineOriginToTransform(FoundTransform, true, FoundTransform))
 	{
-		Progress = GetSplineTransform(FoundTransform.GetLocation(), FoundTransform);
-		MagVelocity = (FoundTransform.GetLocation() - MagLoc)/DeltaSeconds;
-	}	
-	MagVelocity = (FoundTransform.GetLocation() - MagLoc)/DeltaSeconds;
+		Progress = GetConstrainedTransform(FoundTransform.GetLocation(), FoundTransform);
+	}
 	CurrentMagazine->MagInsertPercentage = Progress;
+	if(Progress < 1.f)
+	{		
+		MagVelocity = (FoundTransform.GetLocation() - MagLoc)/DeltaSeconds + ConstrainedExtVel;
+	}
+	else
+	{
+		MagVelocity = FVector::ZeroVector;
+	}
 }
 
 void UTVRMagazineWell::OnMagFullyEjected()
@@ -510,6 +616,11 @@ void UTVRMagazineWell::GetAllowedCatridges_Implementation(TArray<TSubclassOf<ATV
 	}
 }
 
+void UTVRMagazineWell::GetAllowedMagazines(TArray<TSubclassOf<ATVRMagazine>>& OutMagazines)
+{
+	OutMagazines.Append(AllowedMagazines);
+}
+
 void UTVRMagazineWell::StartInsertMagazine(ATVRMagazine* MagToInsert)
 {
 	const auto Gun = GetGunOwner();
@@ -520,7 +631,7 @@ void UTVRMagazineWell::StartInsertMagazine(ATVRMagazine* MagToInsert)
 	
 	// const FTransform SplineTransform = GetMagSpline()->GetTransformAtTime(0.f, ESplineCoordinateSpace::World, false);
 	FTransform FoundTransform;
-	const float NewProgress = GetSplineTransform(
+	const float NewProgress = GetConstrainedTransform(
 		MagToInsert->GetAttachOrigin()->GetComponentLocation(), FoundTransform);
 	UE_LOG(LogTemp, Log, TEXT("Starting Insert at Progress: %f"), NewProgress);
 	DetachProgress = FMath::Min(0.f, NewProgress - 0.01f);
@@ -542,7 +653,7 @@ void UTVRMagazineWell::StartInsertMagazine(ATVRMagazine* MagToInsert)
 	}
 }
 
-float UTVRMagazineWell::GetSplineTransform(const FVector& inLoc, FTransform& outTransform) const
+float UTVRMagazineWell::GetConstrainedTransform(const FVector& inLoc, FTransform& outTransform) const
 {
 	const FVector EjectLocWS = GetEjectLocation();
 	const FVector StartLocWS = GetComponentLocation();

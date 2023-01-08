@@ -6,6 +6,7 @@
 #include "Weapon/Component/TVRAttachmentPoint.h"
 #include "Components/ArrowComponent.h"
 #include "Weapon/TVRGunBase.h"
+#include "Weapon/Component/TVRMagazineWell.h"
 
 
 FName ATVRWeaponAttachment::StaticMeshComponentName(TEXT("Mesh"));
@@ -30,6 +31,12 @@ void ATVRWeaponAttachment::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 	InitAttachments();
+	TArray<UTVRMagazineWell*> MagWells;
+	GetComponents<UTVRMagazineWell>(MagWells);
+	for(const auto MW : MagWells)
+	{
+		MW->OnConstruction();
+	}
 }
 
 

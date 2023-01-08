@@ -37,7 +37,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGunSecondaryUsedDelegate);
 /**
  * 
  */
-UCLASS(Abstract)
+UCLASS(Abstract, HideCategories=("Static Mesh", "Materials", "Collision", "Lighting", "Navigation", "VirtualTexture"))
 class TACTICALVRCORE_API ATVRGunBase : public AGrippableStaticMeshActor, public ITVRHandSocketInterface
 {
 	GENERATED_BODY()

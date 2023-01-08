@@ -512,7 +512,7 @@ void UTVRMagWellComponent::GetSplineTransformAtTime(float inProgress, FTransform
 	}
 }
 
-ATVRMagazine* UTVRMagWellComponent::SpawnMagazineAttached(TSubclassOf<ATVRMagazine> MagazineClass)
+ATVRMagazine* UTVRMagWellComponent::SpawnMagazineAttached(TSubclassOf<ATVRMagazine> NewMagazineClass)
 {
 	if(GetCurrentMagazine() || !GetMagSpline())
 	{
@@ -537,25 +537,25 @@ ATVRMagazine* UTVRMagWellComponent::SpawnMagazineAttached(TSubclassOf<ATVRMagazi
 	{
 		if(const auto Gun = GetGunOwner())
 		{
-			if(MagazineClass == nullptr)
+			if(NewMagazineClass == nullptr)
 			{
 				if(AllowedMagazines.Num() > 0)
 				{
-					MagazineClass = AllowedMagazines[0];
+					NewMagazineClass = AllowedMagazines[0];
 				}
 				else
 				{
 					return nullptr;
 				}
 			}
-			if(IsAllowedMagType(MagazineClass) && GetWorld())
+			if(IsAllowedMagType(NewMagazineClass) && GetWorld())
 			{
 				FActorSpawnParameters SpawnParams;
 				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 				SpawnParams.bAllowDuringConstructionScript = false;
 				// in theory we could allow spawn during construction script, but it would require addtional code like child actor components
 				
-				auto NewMag = World->SpawnActor<ATVRMagazine>(MagazineClass, SpawnParams);
+				auto NewMag = World->SpawnActor<ATVRMagazine>(NewMagazineClass, SpawnParams);
 				if(NewMag)
 				{
 					FTransform SplineTransform;

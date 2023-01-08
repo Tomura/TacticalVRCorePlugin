@@ -56,9 +56,39 @@ void UTVRAttachmentPoint::OnRegister()
 
 void UTVRAttachmentPoint::OnConstruction()
 {
+	TMap<FName, TSubclassOf<ATVRWeaponAttachment>> SubAttachmentMap;
+	if(const auto CurAttach = GetCurrentAttachment())
+	{
+		TArray<UTVRAttachmentPoint*> SubAttachPoints;
+		CurAttach->GetComponents<UTVRAttachmentPoint>(SubAttachPoints, false);
+		for(const auto AP : SubAttachPoints)
+		{
+			// important we want the raw class, not the proxy
+			SubAttachmentMap.Add(AP->GetFName(), AP->GetCurrentAttachmentClass_Internal());
+		}
+	}
+	
 	if(GetCurrentAttachmentClass() && GetCurrentAttachmentClass() != GetChildActorClass())
 	{
 		SetChildActorClass( GetCurrentAttachmentClass());
+		
+		if(const auto NewAttach = GetCurrentAttachment())
+		{
+			TArray<UTVRAttachmentPoint*> SubAttachPoints;
+			NewAttach->GetComponents<UTVRAttachmentPoint>(SubAttachPoints, false);
+			for(auto It = SubAttachmentMap.CreateIterator(); It; ++It)
+			{
+				const FName Key = It->Key;
+				auto SearchPredicate = [Key](const UTVRAttachmentPoint* const TestPoint)
+				{
+					return TestPoint->GetFName() == Key;
+				};
+				if(const auto FoundPoint = SubAttachPoints.FindByPredicate(SearchPredicate))
+				{
+					(*FoundPoint)->SetCurrentAttachmentClass(It->Value);
+				}
+			}
+		}
 	}
 	else if (GetCurrentAttachmentClass() == nullptr) // firsts condition fails on null
 	{

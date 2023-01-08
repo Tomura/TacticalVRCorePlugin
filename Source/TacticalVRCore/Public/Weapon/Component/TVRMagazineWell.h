@@ -15,7 +15,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSimpleMagazineWellDelegate);
 /**
  * 
  */
-UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent), ClassGroup = (TacticalVR))
+UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent), ClassGroup = (TacticalVR), HideCategories=(ChildActorComponent))
 class TACTICALVRCORE_API UTVRMagazineWell : public UChildActorComponent, public ITVRMagazineInterface
 {
 	GENERATED_BODY()
@@ -55,10 +55,11 @@ public:
 	virtual void BeginPlay() override;
 	virtual void BeginDestroy() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	
 	class ATVRGunBase* GetGunOwner() const;
 
 	void InitChildMag();
+	void OnConstruction();
 	
 	// ================================================
 	// Start MagazineComponentInterface
@@ -178,7 +179,7 @@ public:
 
     virtual bool IsMagReleasePressed_Implementation() const override;
 
-	virtual float GetSplineTransform(const FVector& inLoc, FTransform& outTransform) const;
+	virtual float GetConstrainedTransform(const FVector& inLoc, FTransform& outTransform) const;
 
 	UPROPERTY(Category = "Magazine", BlueprintAssignable)
 	FSimpleMagazineWellDelegate EventOnMagazineFullyDropped;
@@ -195,9 +196,19 @@ public:
 
 	bool HasMagRelease() const {return bHasMagRelease;}
 
-	TSubclassOf<class ATVRMagazine> DefaultMagazineClass;
 
 	virtual void GetAllowedCatridges_Implementation(TArray<TSubclassOf<class ATVRCartridge>>& OutCartridges) const override;
+	
+	UFUNCTION(Category="Magazine", BlueprintCallable)
+	virtual class ATVRMagazine* SpawnMagazineAttached(TSubclassOf<ATVRMagazine> MagazineClass = nullptr);
+
+	virtual bool SetMagazineClass(TSubclassOf<ATVRMagazine> NewClass);
+	
+	UPROPERTY(Category = "Magazine", BlueprintReadOnly, EditAnywhere)
+	TSubclassOf<class ATVRMagazine> MagazineClass;
+
+	UFUNCTION(Category="Magazine", BlueprintCallable)
+	virtual void GetAllowedMagazines(TArray<TSubclassOf<ATVRMagazine>>& OutMagazines);
 	
 protected:
 	virtual void StartInsertMagazine(class ATVRMagazine* MagToInsert);

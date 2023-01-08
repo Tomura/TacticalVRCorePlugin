@@ -70,20 +70,8 @@ public:
 		
 		if(CurrentAttachmentProp->IsValidHandle())
 		{		
-			AttachmentsArray.Empty();
-			TArray<TSubclassOf<ATVRWeaponAttachment>> AllowedAttachments;
-			MyAttachmentPoint->GetAllowedAttachments(AllowedAttachments);
-			for(auto LoopAttachment : AllowedAttachments)
-			{
-				if(LoopAttachment == nullptr || LoopAttachment->IsChildOf(AttachmentType::StaticClass()))
-				{				
-					auto TempSight = MakeShareable(new TSubclassOf<AttachmentType>);
-					*TempSight.Object = LoopAttachment;
-					AttachmentsArray.Add(TempSight);
-				}
-			}
-
-
+			PopulateAttachmentsArray(MyAttachmentPoint.Get());
+			
 			FSimpleDelegate BrowseDelegate;
 			BrowseDelegate.BindLambda(
 				[CurrentAttachmentProp]()
@@ -195,6 +183,22 @@ public:
 		}
 	}
 
+	virtual void PopulateAttachmentsArray(AttachPointType* MyAttachmentPoint)
+	{
+		AttachmentsArray.Empty();
+		TArray<TSubclassOf<ATVRWeaponAttachment>> AllowedAttachments;
+		MyAttachmentPoint->GetAllowedAttachments(AllowedAttachments);
+		for(auto LoopAttachment : AllowedAttachments)
+		{
+			if(LoopAttachment == nullptr || LoopAttachment->IsChildOf(AttachmentType::StaticClass()))
+			{				
+				auto TempSight = MakeShareable(new TSubclassOf<AttachmentType>);
+				*TempSight.Object = LoopAttachment;
+				AttachmentsArray.Add(TempSight);
+			}
+		}
+	}
+	
 	FString AttachmentPropName;
 	TArray<TSharedPtr<TSubclassOf<AttachmentType>>> AttachmentsArray;
 };
