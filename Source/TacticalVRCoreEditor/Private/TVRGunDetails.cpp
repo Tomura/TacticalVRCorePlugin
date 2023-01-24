@@ -12,6 +12,7 @@
 #include "Weapon/TVRGunBase.h"
 #include "Weapon/Attachments/TVRWeaponAttachment.h"
 #include "Weapon/Component/TVRAttachmentPoint.h"
+#include"EditorStyleSet.h"
 
 #define LOCTEXT_NAMESPACE "TVRGunDetails"
 

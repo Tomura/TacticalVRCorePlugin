@@ -44,7 +44,7 @@ public:
         FTransform& SlotWorldTransform,
         FName& SlotName,
         UGripMotionControllerComponent* CallingController = nullptr,
-        FName OverridePrefix = NAME_None
+        FName OverridePrefix = EName::None
     ) override;
 
 	virtual bool DenyGripping_Implementation(UGripMotionControllerComponent* GripInitiator = nullptr) override;

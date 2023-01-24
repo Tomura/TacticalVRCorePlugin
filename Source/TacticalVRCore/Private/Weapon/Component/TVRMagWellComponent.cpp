@@ -57,7 +57,7 @@ void UTVRMagWellComponent::BeginPlay()
 
 void UTVRMagWellComponent::BeginDestroy()
 {
-	if(MagAudioComp && !MagAudioComp->IsPendingKill())
+	if(IsValid(MagAudioComp))
 	{
 		MagAudioComp->DestroyComponent();
 	}

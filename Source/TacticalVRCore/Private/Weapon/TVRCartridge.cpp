@@ -73,7 +73,7 @@ void ATVRCartridge::ClosestGripSlotInRange_Implementation(FVector WorldLocation,
                                                              bool& bHadSlotInRange, FTransform& SlotWorldTransform, FName& SlotName,
                                                              UGripMotionControllerComponent* CallingController, FName OverridePrefix)
 {
-	if(UHandSocketComponent* HS = ITVRHandSocketInterface::Execute_GetHandSocket(this, NAME_None))
+	if(UHandSocketComponent* HS = ITVRHandSocketInterface::Execute_GetHandSocket(this, EName::None))
 	{
 		bHadSlotInRange = true;
 		SlotName = FName("HandSocket");
@@ -81,7 +81,7 @@ void ATVRCartridge::ClosestGripSlotInRange_Implementation(FVector WorldLocation,
 	}
 	else
 	{
-		SlotName = NAME_None;
+		SlotName = EName::None;
 		bHadSlotInRange = false;
 	}
 }

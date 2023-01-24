@@ -8,6 +8,7 @@
 
 #include "Weapon/TVRMagazine.h"
 #include "Weapon/Component/TVRMagazineWell.h"
+#include "EditorStyleSet.h"
 
 #define LOCTEXT_NAMESPACE "TVRMagWellDetails"
 

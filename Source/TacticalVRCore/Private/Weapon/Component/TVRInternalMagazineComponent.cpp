@@ -161,7 +161,7 @@ void UTVRInternalMagazineComponent::AttachCartridge(ATVRCartridge* Cartridge)
 	{		
 		const FTransform SavedRelTransform = GrippingHand ? GrippingHand->GrippedObjects[0].RelativeTransform : FTransform::Identity;
 		GrippingHand->DropObjectByInterface(Cartridge, 0, FVector::ZeroVector, FVector::ZeroVector);
-		GrippingHand->GripObjectByInterface(Cartridge, SavedRelTransform, true, EName::NAME_None, EName::NAME_None, true);
+		GrippingHand->GripObjectByInterface(Cartridge, SavedRelTransform, true, EName::None, EName::None, true);
 	}
 	
 	SetCurrentInsertCartridge(Cartridge);

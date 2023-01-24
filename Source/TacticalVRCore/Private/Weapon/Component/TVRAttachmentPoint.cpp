@@ -106,9 +106,9 @@ void UTVRAttachmentPoint::OnConstruction()
 	}
 }
 
-void UTVRAttachmentPoint::CreateChildActor()
+void UTVRAttachmentPoint::CreateChildActor(TFunction<void(AActor*)> CustomizerFunc)
 {
-	Super::CreateChildActor();
+	Super::CreateChildActor(CustomizerFunc);
 		
 	if(!IsTemplate() && GetChildActor())
 	{

@@ -56,7 +56,7 @@ void UTVRPumpAction::BeginPlay()
 
 void UTVRPumpAction::BeginDestroy()
 {
-	if(AudioComponent && !AudioComponent->IsPendingKill())
+	if(IsValid(AudioComponent))
 	{
 		AudioComponent->DestroyComponent();
 	}

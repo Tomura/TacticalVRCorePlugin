@@ -4,3 +4,5 @@ Binaries/Win64/UE4Editor-TacticalVRCore.dll
 Binaries/Win64/UE4Editor-TacticalVRCore.pdb
 Binaries/Win64/UE4Editor-TacticalVRCoreEditor.dll
 Binaries/Win64/UE4Editor-TacticalVRCoreEditor.pdb
+*.pdb
+Binaries/

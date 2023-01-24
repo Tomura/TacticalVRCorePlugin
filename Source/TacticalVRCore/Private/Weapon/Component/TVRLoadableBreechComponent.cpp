@@ -63,17 +63,17 @@ void ULoadableBreechComponent::BeginPlay()
 
 void ULoadableBreechComponent::BeginDestroy()
 {
-	if(GetCurrentCartridge() && !GetCurrentCartridge()->IsPendingKill())
+	if(IsValid(GetCurrentCartridge()))
 	{
 		GetCurrentCartridge()->OnGripped.RemoveDynamic(this, &ULoadableBreechComponent::OnCartridgeGrabbed);
 		GetCurrentCartridge()->OnDropped.RemoveDynamic(this, &ULoadableBreechComponent::OnCartridgeDropped);
 		GetCurrentCartridge()->Destroy();
 	}
-	if(GetFiringComp() && !GetFiringComp()->IsPendingKill())
+	if(IsValid(GetFiringComp()))
 	{
 		GetFiringComp()->OnCartridgeSpent.RemoveDynamic(this, &ULoadableBreechComponent::OnCartridgeSpent);
 	}
-	if(GetCartridgeInsertAudioComp() && !GetCartridgeInsertAudioComp()->IsPendingKill())
+	if(IsValid(GetCartridgeInsertAudioComp()))
 	{
 		GetCartridgeInsertAudioComp()->DestroyComponent();
 	}
@@ -98,7 +98,7 @@ void ULoadableBreechComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		{			
 			UGripMotionControllerComponent* GrippingHand = GetCurrentCartridge()->VRGripInterfaceSettings.HoldingControllers[0].HoldingController;
 			const FTransform HandTransform = GrippingHand->GetPivotTransform();
-			const auto HandSocket = ITVRHandSocketInterface::Execute_GetHandSocket(GetCurrentCartridge(), NAME_None);
+			const auto HandSocket = ITVRHandSocketInterface::Execute_GetHandSocket(GetCurrentCartridge(), EName::None);
 			const FTransform SocketTransform = HandSocket ? HandSocket->GetRelativeTransform() : FTransform::Identity;
 			const FVector ClosestPointUnlimited = FMath::ClosestPointOnInfiniteLine(TargetLoc, ZeroLoc, (SocketTransform.Inverse() * HandTransform).GetLocation());
 			const float ProgressUnlimited = GetComponentTransform().InverseTransformVector(ClosestPointUnlimited - ZeroLoc).X / Distance;	
@@ -391,7 +391,7 @@ void ULoadableBreechComponent::AttachCartridge(ATVRCartridge* Cartridge)
 	{		
 		const FTransform SavedRelTransform = GrippingHand ? GrippingHand->GrippedObjects[0].RelativeTransform : FTransform::Identity;
 		GrippingHand->DropObjectByInterface(Cartridge, 0, FVector::ZeroVector, FVector::ZeroVector);
-		GrippingHand->GripObjectByInterface(Cartridge, SavedRelTransform, true, EName::NAME_None, EName::NAME_None, true);
+		GrippingHand->GripObjectByInterface(Cartridge, SavedRelTransform, true, EName::None, EName::None, true);
 	}
 	
 	SetCurrentCartridge(Cartridge);
@@ -419,14 +419,14 @@ ATVRCartridge* ULoadableBreechComponent::DetachCartridge()
 			GrippingHand->DropObjectByInterface(PrevCartridge,
 				0, FVector::ZeroVector, FVector::ZeroVector);
 			GrippingHand->GripObjectByInterface(PrevCartridge, RelTransform, true,
-				EName::NAME_None, EName::NAME_None, true);
+				EName::None, EName::None, true);
 		}
 	}
 	else
 	{
 		PrevCartridge->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 		PrevCartridge->GetStaticMeshComponent()->SetSimulatePhysics(true);
-		PrevCartridge->GetStaticMeshComponent()->AddImpulse(GetForwardVector() * CartridgeSpeed, NAME_None, true);
+		PrevCartridge->GetStaticMeshComponent()->AddImpulse(GetForwardVector() * CartridgeSpeed, EName::None, true);
 	}
 	return PrevCartridge;
 }

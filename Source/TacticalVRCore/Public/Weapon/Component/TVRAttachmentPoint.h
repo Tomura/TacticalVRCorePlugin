@@ -29,7 +29,7 @@ public:
 							   FActorComponentTickFunction* ThisTickFunction) override;
 	
 	// virtual void CreateChildActor() override;
-	virtual void CreateChildActor() override;
+	virtual void CreateChildActor(TFunction<void(AActor*)> CustomizerFunc = nullptr) override;
 	
 	virtual void OnWeaponAttachmentAttached(class ATVRWeaponAttachment* NewAttachment);
 	// void AttachWeaponAttachment()

@@ -11,6 +11,7 @@
 #include "Weapon/TVRGunWithChild.h"
 #include "Weapon/Component/TVRMagazineWell.h"
 #include "Weapon/Component/TVRMagWellComponent.h"
+#include "Components/InstancedStaticMeshComponent.h"
 
 ATVRMagazine::ATVRMagazine(const FObjectInitializer& OI) : Super(OI)
 {
@@ -224,8 +225,8 @@ void ATVRMagazine::OnMagFullyEjected(const FVector& AngularVelocity, const FVect
     DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 	GetStaticMeshComponent()->SetCollisionProfileName(COLLISION_WEAPON);
     GetStaticMeshComponent()->SetSimulatePhysics(true);
-    GetStaticMeshComponent()->AddImpulse(LinearVelocity, EName::NAME_None, true);
-    GetStaticMeshComponent()->AddAngularImpulseInDegrees(AngularVelocity, EName::NAME_None, true);
+    GetStaticMeshComponent()->AddImpulse(LinearVelocity, EName::None, true);
+    GetStaticMeshComponent()->AddAngularImpulseInDegrees(AngularVelocity, EName::None, true);
 	AttachedMagWell = nullptr;
 
     MagInsertPercentage = 0.f;
@@ -367,7 +368,7 @@ void ATVRMagazine::ReInitGrip()
             HoldingHand->DropObjectByInterface(this, 0, FVector::ZeroVector, FVector::ZeroVector);
             HoldingHand->GripObjectByInterface(this,
             	RelTransform, true,
-            	EName::NAME_None,
+            	EName::None,
             	FName(TEXT("Magazine")),
             	true);
         }

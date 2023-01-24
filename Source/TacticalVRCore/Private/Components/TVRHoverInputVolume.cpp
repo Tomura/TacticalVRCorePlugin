@@ -57,7 +57,7 @@ void UTVRHoverInputVolume::TickComponent(float DeltaTime, ELevelTick TickType,
 	{
 		const auto C = BoltReleasePressed;
 		const float InputBreakOffDistSq = InputBreakOffDistance * InputBreakOffDistance;
-		if(C->IsValidLowLevelFast() && !C->IsPendingKill())
+		if(IsValid(C))
 		{
 			if ((C->GetPivotLocation() - GetComponentLocation()).SizeSquared() > InputBreakOffDistSq)
 			{

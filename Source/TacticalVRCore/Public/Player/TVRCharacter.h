@@ -32,8 +32,8 @@ public:
 		bIsSecondaryGrip(false),
 		bIsSlotGrip(false),
 		GripTransform(FTransform_NetQuantize::Identity),
-		GripBoneName(EName::NAME_None),
-		SlotName(EName::NAME_None)
+		GripBoneName(EName::None),
+		SlotName(EName::None)
     { }
 
     /** Object that should be gripped. */

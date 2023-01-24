@@ -28,7 +28,7 @@ void AWPNA_Muzzle::BeginPlay()
 
 void AWPNA_Muzzle::Destroyed()
 {
-	if(GetGunOwner() && !GetGunOwner()->IsPendingKill())
+	if(IsValid(GetGunOwner()))
 	{
 		if(GetGunOwner()->GetFiringComponent())
 		{

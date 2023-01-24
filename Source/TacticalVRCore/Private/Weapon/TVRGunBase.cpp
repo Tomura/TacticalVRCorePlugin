@@ -13,6 +13,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Libraries/TVRFunctionLibrary.h"
 
+#include "GripScripts/GS_GunTools.h"
+
 #include "Player/TVREquipmentPoint.h"
 #include "Settings/TVRCoreGameplaySettings.h"
 
@@ -893,7 +895,7 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
         {
             SavedSecondaryHand = SecondaryHand;
             SavedSecondaryHandRelTransform = GripInfo.SecondaryGripInfo.SecondaryRelativeTransform;
-        	SavedSecondarySlotName = GripInfo.SecondaryGripInfo.bIsSlotGrip ? GripInfo.SecondaryGripInfo.SecondarySlotName : NAME_None;
+        	SavedSecondarySlotName = GripInfo.SecondaryGripInfo.bIsSlotGrip ? GripInfo.SecondaryGripInfo.SecondarySlotName : EName::None;
 
         	switch(HandSwapType)
         	{
@@ -901,11 +903,11 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
         		{
         			bool bHadSecondarySlotInRange = false;
         			FTransform SecondarySlotTransform;
-        			FName TempSecondaryName = EName::NAME_None;
+        			FName TempSecondaryName = EName::None;
         	
         			Execute_ClosestGripSlotInRange(this, SavedSecondaryHand->GetComponentLocation(), true,
 						bHadSecondarySlotInRange, SecondarySlotTransform, TempSecondaryName,
-						SavedSecondaryHand, EName::NAME_None
+						SavedSecondaryHand, EName::None
 					);
         		
         			if(bHadSecondarySlotInRange)
@@ -922,7 +924,7 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
         					GraspingHand->FreezePose();
 						}
         				SavedSecondaryHand->GripObjectByInterface(this, RelativeSocketTransform,
-							true, EName::NAME_None,
+							true, EName::None,
 							SavedSecondarySlotName, true);
         				VRGripInterfaceSettings.bAllowMultipleGrips = true;
         				return true;
@@ -934,19 +936,19 @@ bool ATVRGunBase::HandleHandSwap(UGripMotionControllerComponent* GrippingHand, c
         			if(const auto MyChar = Cast<ATVRCharacter>(SavedSecondaryHand->GetOwner()))
         			{
         				bool bHadSlotInRange = false;
-        				FName SlotName = EName::NAME_None;        	
+        				FName SlotName = EName::None;        	
         				FTransform SlotTransform;
         	
         				Execute_ClosestGripSlotInRange(this, GrippingHand->GetComponentLocation(), false,
 							bHadSlotInRange, SlotTransform, SlotName,
-							SavedSecondaryHand, EName::NAME_None
+							SavedSecondaryHand, EName::None
 						);
                 	
         				// FTransform SocketTransformWS = GetPrimaryHandSocket()->GetHandSocketTransform(SavedSecondaryHand.Get());
         				const FTransform RelativeSocketTransform = GetActorTransform().GetRelativeTransform(SlotTransform);
         				SavedSecondaryHand->GripObjectByInterface(
 							this, RelativeSocketTransform, true,
-							EName::NAME_None,
+							EName::None,
 							PrimarySlotName,
 							true);
         				return true;

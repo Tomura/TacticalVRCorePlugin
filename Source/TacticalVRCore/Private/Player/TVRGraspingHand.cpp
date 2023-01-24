@@ -326,7 +326,7 @@ void ATVRGraspingHand::OnPinky02EndOverlap(UPrimitiveComponent* OverlappedCompon
 void ATVRGraspingHand::InitPhysics()
 {
 	ATVRCharacter* OwnerChar = GetOwnerCharacter();
-	if(GetPhysicsRoot() && OwnerChar != nullptr && !OwnerChar->IsPendingKill())
+	if(GetPhysicsRoot() && IsValid(OwnerChar))
 	{
 		GetPhysicalAnimation()->AddTickPrerequisiteComponent(GetSkeletalMeshComponent());
 		GetSkeletalMeshComponent()->AddTickPrerequisiteComponent(OwnerChar->VRMovementReference);
@@ -540,7 +540,7 @@ void ATVRGraspingHand::SetFingerOverlaps(bool bEnableOverlaps)
 
 void ATVRGraspingHand::SetWeaponCollisionResponse(ECollisionResponse NewResponse)
 {
-	if(!GetSkeletalMeshComponent()->IsPendingKill())
+	if(IsValid(GetSkeletalMeshComponent()))
 	{
 		GetSkeletalMeshComponent()->SetCollisionResponseToChannel(ECC_WeaponObjectChannel, NewResponse);
 	}
@@ -817,7 +817,7 @@ void ATVRGraspingHand::SetupPhysicsIfNeededNative(bool bSimulate, bool bSetRelat
 			SkelMesh->SetSimulatePhysics(true);
 			const FVector CenterOfMass = SkelMesh->GetCenterOfMass();
 			GetSimulatingHandConstraint()->SetWorldLocation(CenterOfMass, false, nullptr, ETeleportType::TeleportPhysics);
-			GetSimulatingHandConstraint()->SetConstrainedComponents(GetPhysicsRoot(), NAME_None, SkelMesh, BoneName);
+			GetSimulatingHandConstraint()->SetConstrainedComponents(GetPhysicsRoot(), EName::None, SkelMesh, BoneName);
 			
 			GetSimulatingHandConstraint()->SetConstraintToForceBased(true);
 			OwningController->bDisableLowLatencyUpdate = true;

@@ -43,7 +43,7 @@ public:
 	FVector EjectRelativeLoc;
 		
 protected:
-	virtual void CreateChildActor() override;
+	virtual void CreateChildActor(TFunction<void(AActor*)> CustomizerFunc = nullptr) override;
 
 	virtual void OnRegister() override;
 	virtual void OnUnregister() override;

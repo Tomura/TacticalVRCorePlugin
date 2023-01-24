@@ -49,9 +49,9 @@ UTVRMagazineWell::UTVRMagazineWell(const FObjectInitializer& OI)
 }
 
 
-void UTVRMagazineWell::CreateChildActor()
+void UTVRMagazineWell::CreateChildActor(TFunction<void(AActor*)> CustomizerFunc)
 {
-	Super::CreateChildActor();
+	Super::CreateChildActor(CustomizerFunc);
 
 	if(const auto NewChild = GetChildActor())
 	{
@@ -202,11 +202,11 @@ void UTVRMagazineWell::OnConstruction()
 void UTVRMagazineWell::BeginDestroy()
 {
 	Super::BeginDestroy();
-	if(CollisionBox && !CollisionBox->IsPendingKill())
+	if(IsValid(CollisionBox))
 	{
 		CollisionBox->DestroyComponent();
 	}
-	if(MagAudioComp && !MagAudioComp->IsPendingKill())
+	if(IsValid(MagAudioComp))
 	{
 		MagAudioComp->DestroyComponent();
 	}

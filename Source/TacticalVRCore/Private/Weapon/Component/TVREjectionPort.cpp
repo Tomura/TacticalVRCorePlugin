@@ -55,7 +55,7 @@ void UTVREjectionPort::OnComponentDestroyed(bool bDestroyingHierarchy)
 {
 	Super::OnComponentDestroyed(bDestroyingHierarchy);
 
-	if(EjectAudioComp && !EjectAudioComp->IsPendingKill())
+	if(IsValid(EjectAudioComp))
 	{
 		EjectAudioComp->DestroyComponent();
 		EjectAudioComp = nullptr;
@@ -65,8 +65,8 @@ void UTVREjectionPort::OnComponentDestroyed(bool bDestroyingHierarchy)
 	
 	for(uint8 i = 0; i < CartridgePool.Num(); i++)
 	{
-		auto PooledCartridge = CartridgePool[i];
-	    if(PooledCartridge != nullptr && PooledCartridge->IsValidLowLevel() && !PooledCartridge->IsPendingKill()) {
+		auto PooledCartridge = GetValid(CartridgePool[i]);
+	    if(PooledCartridge) {
 		     PooledCartridge->Destroy();
 	    }
 		CartridgePool[i] = nullptr; // null the pointer in the pool, we don't care that much, as we will empty it later.
@@ -130,7 +130,7 @@ FTransform UTVREjectionPort::GetEjectionDir() const
 
 ATVRCartridge* UTVREjectionPort::SpawnEjectedCartridge(TSubclassOf<ATVRCartridge> CartridgeClass, bool bSpent)
 {
-	if(CartridgeClass && !GetOwner()->IsPendingKill())
+	if(CartridgeClass && IsValid(GetOwner()))
 	{
 		const FTransform EjectionTransform = GetEjectionDir();
 		ATVRCartridge* NewCartridge = nullptr;

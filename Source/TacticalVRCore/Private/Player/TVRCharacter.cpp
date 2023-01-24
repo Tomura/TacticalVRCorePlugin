@@ -4,6 +4,7 @@
 
 #include "Settings/TVRCoreGameplaySettings.h"
 #include "GameplayTags.h"
+#include "HeadMountedDisplayFunctionLibrary.h"
 #include "TacticalCollisionProfiles.h"
 
 #include "Libraries/TVRFunctionLibrary.h"
@@ -12,6 +13,8 @@
 #include "Components/TVRClimbableCapsuleComponent.h"
 #include "Player/TVRCharacterMovementComponent.h"
 #include "TacticalTraceChannels.h"
+#include "VRExpansionFunctionLibrary.h"
+#include "VRGlobalSettings.h"
 #include "Player/TVRGraspingHand.h"
 #include "Player/PauseMenuActor.h"
 #include "Components/SphereComponent.h"
@@ -104,9 +107,9 @@ void ATVRCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME_CONDITION(ATVRCharacter, bIsInMenu, COND_SkipOwner); // Owner is mostly authoritive here. Server can force it off using a client function if necessary
-	DOREPLIFETIME_CONDITION(ATVRCharacter, RightControllerOffset, COND_SkipOwner);
-	DOREPLIFETIME_CONDITION(ATVRCharacter, LeftControllerOffset, COND_SkipOwner);
+	// DOREPLIFETIME_CONDITION(ATVRCharacter, bIsInMenu, COND_SkipOwner); // Owner is mostly authoritive here. Server can force it off using a client function if necessary
+	// DOREPLIFETIME_CONDITION(ATVRCharacter, RightControllerOffset, COND_SkipOwner);
+	// DOREPLIFETIME_CONDITION(ATVRCharacter, LeftControllerOffset, COND_SkipOwner);
 }
 
 
@@ -735,7 +738,7 @@ bool ATVRCharacter::TryGrip(UGripMotionControllerComponent* Hand, bool bIsLargeG
 						bool bHasSecondary = false;
 						FTransform SecondaryTF;
 						FName SlotName;
-						IVRGripInterface::Execute_ClosestGripSlotInRange(BestObject, Hand->GetComponentLocation(), true, bHasSecondary, SecondaryTF, SlotName, Hand, NAME_None);
+						IVRGripInterface::Execute_ClosestGripSlotInRange(BestObject, Hand->GetComponentLocation(), true, bHasSecondary, SecondaryTF, SlotName, Hand, EName::None);
 						if(!bHasSecondary)
 						{
 							DeltaPrio = 1; // we do not wanna steal is possible							
@@ -822,8 +825,9 @@ bool ATVRCharacter::TraceGrips(TArray<FHitResult>& OutHits, UGripMotionControlle
 	FCollisionQueryParams QueryParams(FName("TraceGrip"), false);
 	QueryParams.AddIgnoredActors(IgnoreActors);
 	QueryParams.AddIgnoredActor(this);
-	const bool bHitSomething = GetWorld()->SweepMultiByChannel(OutHits, TraceStart, TraceStop, FQuat(), ECC_VRTraceChannel, 
-    FCollisionShape::MakeSphere(SweepRadius), QueryParams);
+	const bool bHitSomething = GetWorld()->SweepMultiByChannel(
+		OutHits, TraceStart, TraceStop, FQuat::Identity, ECC_VRTraceChannel, 
+		FCollisionShape::MakeSphere(SweepRadius), QueryParams);
 	return bHitSomething;
 }
 
@@ -1109,7 +1113,7 @@ bool ATVRCharacter::AttemptToSecondaryGripObject(const FTransform& GripTransform
 		bool bHadSlotInRange = false;
 		FTransform SlotWorldTransform;
 		FName SlotName;
-		FName OverridePrefix = EName::NAME_None;
+		FName OverridePrefix = EName::None;
 		IVRGripInterface::Execute_ClosestGripSlotInRange(ObjectToGrip, Hit.ImpactPoint, true, bHadSlotInRange, SlotWorldTransform,  SlotName, Hand, OverridePrefix);
 		if(bHadSlotInRange)
 		{
@@ -1119,7 +1123,7 @@ bool ATVRCharacter::AttemptToSecondaryGripObject(const FTransform& GripTransform
 			FGrabObjectInfo GripInfo;
 			GripInfo.GripTransform = RelativeGripTransform;
 			GripInfo.ObjectToGrip = ObjectToGrip;
-			GripInfo.GripBoneName = EName::NAME_None;
+			GripInfo.GripBoneName = EName::None;
 			GripInfo.SlotName = SlotName;
 			GripInfo.bIsSlotGrip = true;
 			GripInfo.bIsSecondaryGrip = true;
@@ -1143,7 +1147,7 @@ bool ATVRCharacter::AttemptToPrimaryGripObject(const FTransform& GripTransform, 
 	bool bHadSlotInRange = false;
 	FTransform SlotWorldTransform;
 	FName SlotName;
-	IVRGripInterface::Execute_ClosestGripSlotInRange(ObjectToGrip, Hit.ImpactPoint, false, bHadSlotInRange, SlotWorldTransform,  SlotName, Hand, EName::NAME_None);
+	IVRGripInterface::Execute_ClosestGripSlotInRange(ObjectToGrip, Hit.ImpactPoint, false, bHadSlotInRange, SlotWorldTransform,  SlotName, Hand, EName::None);
 	FTransform RelativeGripTransform;
 	if(bHadSlotInRange)
 	{
@@ -1151,7 +1155,7 @@ bool ATVRCharacter::AttemptToPrimaryGripObject(const FTransform& GripTransform, 
 		RelativeGripTransform.SetScale3D(FVector(1.f, 1.f, 1.f));
 		// if(Hand->bOffsetByControllerProfile)
 		// {
-		// 	RelativeGripTransform=UVRGlobalSettings::AdjustTransformByControllerProfile(EName::NAME_None, RelativeGripTransform, HandType == EControllerHand::Right);
+		// 	RelativeGripTransform=UVRGlobalSettings::AdjustTransformByControllerProfile(EName::None, RelativeGripTransform, HandType == EControllerHand::Right);
 		// }			
 	}
 	else
@@ -1165,7 +1169,7 @@ bool ATVRCharacter::AttemptToPrimaryGripObject(const FTransform& GripTransform, 
 	GripInfo.ObjectToGrip = ObjectToGrip;
 	GripInfo.bIsSlotGrip = bHadSlotInRange;
 	GripInfo.bIsSecondaryGrip = false;
-	GripInfo.GripBoneName = bHadSlotInRange ? Hit.BoneName : EName::NAME_None;
+	GripInfo.GripBoneName = bHadSlotInRange ? Hit.BoneName : EName::None;
 	GripInfo.SlotName = SlotName;
 	GripInfo.GripTransform = RelativeGripTransform;
 	TryGrabObject(GripInfo, HandType);

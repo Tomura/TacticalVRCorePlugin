@@ -64,7 +64,7 @@ void ATVRWeaponAttachment::Destroyed()
 	Super::Destroyed();
 	if(const auto Gun = GetGunOwner())
 	{
-		if(!Gun->IsPendingKill())
+		if(IsValid(Gun))
 		{			
 			Gun->EventOnGripped.RemoveAll(this);
 			Gun->EventOnDropped.RemoveAll(this);

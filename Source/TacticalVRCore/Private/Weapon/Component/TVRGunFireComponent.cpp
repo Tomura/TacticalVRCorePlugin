@@ -136,11 +136,11 @@ void UTVRGunFireComponent::PostInitProperties()
 
 void UTVRGunFireComponent::BeginDestroy()
 {
-	if(FireAudioComp && !FireAudioComp->IsPendingKill())
+	if(IsValid(FireAudioComp))
 	{
 		FireAudioComp->DestroyComponent();
 	}
-	if(EmptyAudioComp && !EmptyAudioComp->IsPendingKill())
+	if(IsValid(EmptyAudioComp))
 	{
 		EmptyAudioComp->DestroyComponent();
 	}

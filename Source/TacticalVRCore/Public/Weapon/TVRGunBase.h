@@ -162,7 +162,7 @@ public:
 	FVROnGripSignature EventOnGripped;
 	FVROnDropSignature EventOnDropped;
 	
-	virtual void ClosestGripSlotInRange_Implementation(FVector WorldLocation, bool bSecondarySlot,  bool & bHadSlotInRange, FTransform & SlotWorldTransform, FName & SlotName, UGripMotionControllerComponent * CallingController = nullptr, FName OverridePrefix = NAME_None) override;
+	virtual void ClosestGripSlotInRange_Implementation(FVector WorldLocation, bool bSecondarySlot,  bool & bHadSlotInRange, FTransform & SlotWorldTransform, FName & SlotName, UGripMotionControllerComponent * CallingController = nullptr, FName OverridePrefix = EName::None) override;
 
 	virtual bool GetSecondarySlot(FVector WorldLocation, FTransform & OutTransform, FName & OutSlotName, UGripMotionControllerComponent * CallingController) const;
 	
@@ -514,7 +514,7 @@ protected:
     class UStaticMeshComponent* LoadedBullet;
     
 	UPROPERTY(Category="Gripping", BlueprintReadOnly, Instanced)
-	UGS_GunTools* GripScript;
+	class UGS_GunTools* GripScript;
 	
     bool bSkipHandSwap;
     
