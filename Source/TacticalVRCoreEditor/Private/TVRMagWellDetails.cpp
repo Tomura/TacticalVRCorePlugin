@@ -8,9 +8,10 @@
 
 #include "Weapon/TVRMagazine.h"
 #include "Weapon/Component/TVRMagazineWell.h"
-#include "EditorStyleSet.h"
+// #include "EditorStyleSet.h"
+#include "Styling/AppStyle.h"
 
-#define LOCTEXT_NAMESPACE "TVRMagWellDetails"
+#define LOCTEXT_NAMESPACE_TMAGWELL "TVRMagWellDetails"
 
 FTVRMagWellDetails::FTVRMagWellDetails()
 {
@@ -76,10 +77,10 @@ void FTVRMagWellDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 			}
 			else
 			{
-				DisplayName = NSLOCTEXT(LOCTEXT_NAMESPACE,"Invalid Pointer","Invalid Pointer");
+				DisplayName = NSLOCTEXT(LOCTEXT_NAMESPACE_TMAGWELL,"Invalid Pointer","Invalid Pointer");
 			}
 			return SNew(STextBlock)
-			.TextStyle(FEditorStyle::Get(), "NormalText")
+			.TextStyle(FAppStyle::Get(), "NormalText")
 			.Margin(2.f)
 			.Text(DisplayName);
 		};
@@ -106,15 +107,15 @@ void FTVRMagWellDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 			{
 				return FText::FromName(AssetData.AssetName);
 			}
-			return NSLOCTEXT(LOCTEXT_NAMESPACE, "InvalidDisplayText", "Invalid Display Text");
+			return NSLOCTEXT(LOCTEXT_NAMESPACE_TMAGWELL, "InvalidDisplayText", "Invalid Display Text");
 		};
 
-		Cat.AddCustomRow(NSLOCTEXT(LOCTEXT_NAMESPACE, "CurrentSightSelector", "Current Attachment"))
+		Cat.AddCustomRow(NSLOCTEXT(LOCTEXT_NAMESPACE_TMAGWELL, "CurrentSightSelector", "Current Attachment"))
 		.NameContent()
 		[
 			SNew(STextBlock)
-			.Text(NSLOCTEXT(LOCTEXT_NAMESPACE, "CurrentMagSelector", "Magazine Class"))
-			.TextStyle(FEditorStyle::Get(), "SmallText")
+			.Text(NSLOCTEXT(LOCTEXT_NAMESPACE_TMAGWELL, "CurrentMagSelector", "Magazine Class"))
+			.TextStyle(FAppStyle::Get(), "SmallText")
 		]
 		.ValueContent()
 		.MaxDesiredWidth(800.f)
@@ -130,7 +131,7 @@ void FTVRMagWellDetails::CustomizeDetails(IDetailLayoutBuilder& DetailBuilder)
 				.OnSelectionChanged_Lambda(SelectedAttachmentChanged)
 				[
 					SNew(STextBlock)
-					.TextStyle(FEditorStyle::Get(), "SmallText")
+					.TextStyle(FAppStyle::Get(), "SmallText")
 					.Text_Lambda(CurrentAttachmentText)
 				]
 			]

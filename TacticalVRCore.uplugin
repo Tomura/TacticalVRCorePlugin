@@ -28,12 +28,20 @@
 	],
 	"Plugins": [
 		{
+			"Name": "OpenXR",
+			"Enabled": true
+		},
+		{
+			"Name": "XRBase",
+			"Enabled": true
+		},
+		{
 			"Name": "VRExpansionPlugin",
 			"Enabled": true
 		},
-        {
-            "Name": "OpenXRExpansionPlugin",
-            "Enabled": true
-        }
-    ]
+		{
+			"Name": "OpenXRExpansionPlugin",
+			"Enabled": true
+		}
+	]
 }

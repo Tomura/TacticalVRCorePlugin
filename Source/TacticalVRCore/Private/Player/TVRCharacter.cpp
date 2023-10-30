@@ -2,25 +2,35 @@
 
 #include "Player/TVRCharacter.h"
 
-#include "Settings/TVRCoreGameplaySettings.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "GameplayTags.h"
+
 #include "HeadMountedDisplayFunctionLibrary.h"
+
+
 #include "TacticalCollisionProfiles.h"
 
 #include "Libraries/TVRFunctionLibrary.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "Weapon/TVRGunBase.h"
-#include "Components/TVRClimbableCapsuleComponent.h"
-#include "Player/TVRCharacterMovementComponent.h"
+
+
+#include "VRGlobalSettings.h"
+
 #include "TacticalTraceChannels.h"
 #include "VRExpansionFunctionLibrary.h"
-#include "VRGlobalSettings.h"
+
+#include "Settings/TVRCoreGameplaySettings.h"
+
+#include "Player/TVRCharacterMovementComponent.h"
 #include "Player/TVRGraspingHand.h"
 #include "Player/PauseMenuActor.h"
+#include "Player/TVRPlayerController.h"
+
+#include "Components/TVRClimbableCapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/TVRHoverInputVolume.h"
 #include "Components/WidgetInteractionComponent.h"
-#include "Player/TVRPlayerController.h"
+
+#include "Weapon/TVRGunBase.h"
 #include "Weapon/TVRMagazine.h"
 #include "Weapon/Attachments/TVRWeaponAttachment.h"
 // #include "Net/UnrealNetwork.h" // todo: include once networking is relevant
@@ -163,7 +173,7 @@ void ATVRCharacter::PossessedBy(AController* NewController)
     if(bAlreadyPossessed)
     {
         UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
-    }
+	}
     else
     {
         ClientPossessed();
@@ -680,9 +690,10 @@ bool ATVRCharacter::TryGrip(UGripMotionControllerComponent* Hand, bool bIsLargeG
 	}
 
 	// todo: check secondary
-	TArray<FHitResult> Hits;
-	if(TraceGrips(Hits, Hand, GrabSphere))
+	if(TArray<FHitResult> Hits; TraceGrips(Hits, Hand, GrabSphere))
 	{
+		UE_LOG(LogTemp, Log, TEXT("Found %d objects in grip trace"), Hits.Num());
+		
 		FHitResult* BestHit = nullptr;
 		uint8 BestPriority = 0;
 		UObject* BestObject = nullptr;
@@ -691,8 +702,7 @@ bool ATVRCharacter::TryGrip(UGripMotionControllerComponent* Hand, bool bIsLargeG
 		{
 			UObject* GripInterface = nullptr;
 			
-			const bool bIsGripInterface = Hit.GetComponent()->Implements<UVRGripInterface>();
-			if(bIsGripInterface)
+			if(Hit.GetComponent()->Implements<UVRGripInterface>())
 			{
 				GripInterface = Hit.GetComponent();
 			}
@@ -712,8 +722,7 @@ bool ATVRCharacter::TryGrip(UGripMotionControllerComponent* Hand, bool bIsLargeG
 					}
 				}
 				
-				const bool bOwnerImplementInterface = GripOwner->Implements<UVRGripInterface>();
-				if(bOwnerImplementInterface)
+				if(GripOwner->Implements<UVRGripInterface>())
 				{
 					GripInterface = GripOwner;
 				}
@@ -815,7 +824,8 @@ bool ATVRCharacter::TryDrop(UGripMotionControllerComponent* Hand, bool bIsLarge)
 }
 
 bool ATVRCharacter::TraceGrips(TArray<FHitResult>& OutHits, UGripMotionControllerComponent* Hand, UPrimitiveComponent* OverlapComp)
-{	// Trace for object first
+{	
+	// Trace for object first
 	constexpr float TraceLength = 0.01;
 	const FVector TraceStart = OverlapComp->Bounds.Origin - OverlapComp->GetForwardVector() * TraceLength;
 	const FVector TraceStop = OverlapComp->Bounds.Origin + OverlapComp->GetForwardVector() * TraceLength;
@@ -1004,8 +1014,10 @@ void ATVRCharacter::GrabOrUse(UGripMotionControllerComponent* UsingHand)
         }
     }
 	
+	UE_LOG(LogTemp, Log, TEXT("Trying to grip"));
     if(!TryGrip(UsingHand, false))
     {
+		UE_LOG(LogTemp, Log, TEXT("Did not find a grip"));
     	FBPActorGripInformation Grip;
     	if(UsingHand->HasGrippedObjects() || GetOtherControllerHand(UsingHand)->GetIsSecondaryAttachment(UsingHand, Grip))
     	{
@@ -1152,11 +1164,7 @@ bool ATVRCharacter::AttemptToPrimaryGripObject(const FTransform& GripTransform, 
 	if(bHadSlotInRange)
 	{
 		RelativeGripTransform = GripTransform.GetRelativeTransform(SlotWorldTransform);
-		RelativeGripTransform.SetScale3D(FVector(1.f, 1.f, 1.f));
-		// if(Hand->bOffsetByControllerProfile)
-		// {
-		// 	RelativeGripTransform=UVRGlobalSettings::AdjustTransformByControllerProfile(EName::None, RelativeGripTransform, HandType == EControllerHand::Right);
-		// }			
+		RelativeGripTransform.SetScale3D(FVector(1.f, 1.f, 1.f));		
 	}
 	else
 	{

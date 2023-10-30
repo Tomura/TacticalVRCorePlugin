@@ -24,22 +24,68 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	
+
+	/**
+	 * 
+	 * @param GrippingController 
+	 * @param GripInformation 
+	 */
 	virtual void OnGrip_Implementation(UGripMotionControllerComponent* GrippingController, const FBPActorGripInformation& GripInformation) override;
+
+	/**
+	 * 
+	 * @param ReleasingController 
+	 * @param GripInformation 
+	 * @param bWasSocketed 
+	 */
 	virtual void OnGripRelease_Implementation(UGripMotionControllerComponent* ReleasingController, const FBPActorGripInformation& GripInformation, bool bWasSocketed) override;
 
+	/**
+	 * Tick function that is only called when the component is gripped
+	 * @param GrippingController The grip controlelr that is currently gripping this component
+	 * @param GripInformation The grip information for the current grip
+	 * @param DeltaTime The time between this and the last tick
+	 */
 	virtual void TickGrip_Implementation(UGripMotionControllerComponent* GrippingController, const FBPActorGripInformation& GripInformation, float DeltaTime) override;
 
+	/**
+	 * Returns the relative transform of the Grip originating from the initial grip locations
+	 * This function is mainly used to track how far the charging handle is pulled back.
+	 * As this function calculates and returns a transform it should be used sparingly.
+	 * @returns the relative transform of the Grip as a FTransform. 
+	 */
 	UFUNCTION(Category="Charging Handle", BlueprintCallable)
 	virtual FTransform GetRelativeGripTransform(UGripMotionControllerComponent* GrippingController) const;
 	
+	/** Called when the charging handle should lock back */
 	virtual void LockChargingHandle_Implementation(float LockProgress) override;
+	
+	/** Called when the charging handle should be unlocked */
 	virtual void UnlockChargingHandle_Implementation() override;
+
+	/** Changes the progress of the charging handle (0 = compressed, 1 = extended) */
 	virtual void SetProgress_Implementation(float Value) override;
+
+	/** Whether the Component is currently used or not */
 	
 	virtual bool IsInUse_Implementation() const override { return VRGripInterfaceSettings.bIsHeld; }
-	virtual bool IsLocked_Implementation() const override { return bIsLocked; }	
+	
+	/**
+	 * Whether the Component is locked. Call ITVRChargingHandleInterface::Execute_IsLocked()
+	 * @returns the locked status of the charging handle as a boolean
+	 */
+	virtual bool IsLocked_Implementation() const override { return bIsLocked; }
+	
+	/**
+	 * Returns the Components progress. Call ITVRChargingHandleInterface::Execute_GetProgress()
+	 * @returns the Current Progress as a float between 0 and 1.
+	 */
 	virtual float GetProgress_Implementation() const override { return CurrentProgress; }
+	
+	/**
+	 * Returns the max travel. Call ITVRChargingHandleInterface::Execute_GetMaxTravel()
+	 * @returns the maximum deflection in uu.
+	 */
 	virtual float GetMaxTavel_Implementation() const override { return MaxDeflection; }
 	
 	virtual void SetStiffness_Implementation(float NewStiffness) override { ChargingHandleStiffness = NewStiffness; }

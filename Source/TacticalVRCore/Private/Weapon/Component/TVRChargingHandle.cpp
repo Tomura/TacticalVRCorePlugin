@@ -1,7 +1,7 @@
 // This file is covered by the LICENSE file in the root of this plugin.
 
 #include "Weapon/Component/TVRChargingHandle.h"
-
+#include "GripMotionControllerComponent.h"
 #include "TacticalCollisionProfiles.h"
 #include "Components/AudioComponent.h"
 

@@ -10,6 +10,7 @@
 #include "DetailWidgetRow.h"
 #include "IContentBrowserSingleton.h"
 #include "PropertyCustomizationHelpers.h"
+#include "Styling/AppStyle.h"
 
 #include "Weapon/Attachments/TVRWeaponAttachment.h"
 #include "Weapon/Attachments/WPNA_ForeGrip.h"
@@ -29,6 +30,7 @@
 #include "Weapon/Component/TVRAttachPoint_Stock.h"
 #include "Weapon/Component/TVRAttachPoint_Underbarrel.h"
 #include "Weapon/Component/TVRAttachPoint_Barrel.h"
+
 
 
 #define LOCTEXT_NAMESPACE "TVRAttachPointDetails"
@@ -110,7 +112,7 @@ public:
 					DisplayName = NSLOCTEXT(LOCTEXT_NAMESPACE,"Invalid Pointer","Invalid Pointer");
 				}
 				return SNew(STextBlock)
-				.TextStyle(FEditorStyle::Get(), "NormalText")
+				.TextStyle(FAppStyle::Get(), "NormalText")
 				.Margin(2.f)
 				.Text(DisplayName);
 			};
@@ -145,7 +147,7 @@ public:
 			[
 				SNew(STextBlock)
 				.Text(NSLOCTEXT(LOCTEXT_NAMESPACE, "CurrentSightSelector", "Current Attachment"))
-				.TextStyle(FEditorStyle::Get(), "SmallText")
+				.TextStyle(FAppStyle::Get(), "SmallText")
 			]
 			.ValueContent()
 			.MaxDesiredWidth(800.f)
@@ -163,7 +165,7 @@ public:
 					.OnSelectionChanged_Lambda(SelectedAttachmentChanged)
 					[
 						SNew(STextBlock)
-						.TextStyle(FEditorStyle::Get(), "SmallText")
+						.TextStyle(FAppStyle::Get(), "SmallText")
 						.Text_Lambda(CurrentAttachmentText)
 					]
 				]
