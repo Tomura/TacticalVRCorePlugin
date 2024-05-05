@@ -111,6 +111,8 @@ ATVRCharacter::ATVRCharacter(const FObjectInitializer& OI)
 
 	GrabHysteresisLeft = FTVRHysteresisValue(0.2f, 0.5f);
 	GrabHysteresisRight = FTVRHysteresisValue(0.2f, 0.5f);
+
+	bGraspingHands = true;
 }
 
 void ATVRCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty> & OutLifetimeProps) const
@@ -209,8 +211,9 @@ void ATVRCharacter::SetupHands()
         UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Floor);
         UHeadMountedDisplayFunctionLibrary::SetSpectatorScreenMode(ESpectatorScreenMode::SingleEyeCroppedToFill);
     }
-    
-    SpawnGraspingHands();
+	if (bGraspingHands) {
+		SpawnGraspingHands();
+	}
 }
 
 void ATVRCharacter::RepositionHands(bool bIsRightHand, const FTransform& NewTransform)
@@ -1507,9 +1510,12 @@ void ATVRCharacter::SampleGripVelocity(UGripMotionControllerComponent* MotionCon
 	}
 	else // not necessary for a lot of applications, but we also sample the empty hand
 	{
-		Filter.AddSample(
-			GetGraspingHand(MotionController)->GetSkeletalMeshComponent()->GetPhysicsLinearVelocity()
-		);
+		EControllerHand HandType = EControllerHand::AnyHand;
+		MotionController->GetHandType(HandType);
+		UPrimitiveComponent* SampleComp = GetGraspingHand(MotionController) ?
+			GetGraspingHand(MotionController)->GetSkeletalMeshComponent() :
+			(HandType == EControllerHand::Left ? HandMeshLeft : HandMeshRight);
+		Filter.AddSample(SampleComp->GetPhysicsLinearVelocity());
 	}
 }
 

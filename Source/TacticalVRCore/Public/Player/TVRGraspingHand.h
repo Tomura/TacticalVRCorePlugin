@@ -98,6 +98,11 @@ public:
 	ETVRHandSwapType PendingHandSwap;
 	bool bPendingReinitSecondary;
 	FTransform PendingRelativeMeshTransform;
+
+	bool bInitializedConstraint;
+	FTransform Frame1;
+	FTransform Frame2;
+	
 	
 protected:	
 	/** Hand Type Left/Right of the corresponding motion controller */

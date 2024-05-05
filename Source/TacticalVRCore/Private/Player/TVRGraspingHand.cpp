@@ -20,6 +20,7 @@ ATVRGraspingHand::ATVRGraspingHand(const FObjectInitializer& OI) : Super(OI)
     OwningController = nullptr;
     OtherController = nullptr;
     PhysicsRoot = nullptr;
+	bInitializedConstraint = false;
 
 	bIsGripping = false;
 	
@@ -484,17 +485,16 @@ void ATVRGraspingHand::GetOrSpawnAttachmentProxy()
 		{
 			// Spawn proxy
 			UActorComponent* NewComp = OwningController->GetOwner()->AddComponentByClass(UNoRepSphereComponent::StaticClass(), true, FTransform::Identity, false);
-			if(NewComp)
-			{
-				AttachmentProxy = Cast<UNoRepSphereComponent>(NewComp);
-				AttachmentProxy->SetSphereRadius(4.f);
-				AttachmentProxy->SetCollisionObjectType(ECC_WorldDynamic);
-				AttachmentProxy->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-				AttachmentProxy->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-				AttachmentProxy->SetAllMassScale(0.f);
-				AttachmentProxy->AttachToComponent(GetRootPhysics(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-				AttachmentProxy->ComponentTags.AddUnique(SearchTag);
-			}
+			AttachmentProxy = NewComp ? Cast<UNoRepSphereComponent>(NewComp) : nullptr;
+		}
+		if (AttachmentProxy) {
+			AttachmentProxy->SetSphereRadius(4.f);
+			AttachmentProxy->SetCollisionObjectType(ECC_WorldDynamic);
+			AttachmentProxy->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+			AttachmentProxy->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+			AttachmentProxy->SetAllMassScale(0.f);
+			AttachmentProxy->AttachToComponent(GetRootPhysics(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+			AttachmentProxy->ComponentTags.AddUnique(SearchTag);
 		}
 	}
 }
@@ -570,8 +570,9 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 		bIsGripping = true;
 	
 		RetrievePoses(GripInfo,false);
-		InitializeAndAttach(GripInfo, false, false);
+		//InitializeAndAttach(GripInfo, false, false);
 
+		// finalize
 		StopLerpHand();
 		StartCurl();
 		PostHandleGripped();
@@ -818,6 +819,18 @@ void ATVRGraspingHand::SetupPhysicsIfNeededNative(bool bSimulate, bool bSetRelat
 			const FVector CenterOfMass = SkelMesh->GetCenterOfMass();
 			GetSimulatingHandConstraint()->SetWorldLocation(CenterOfMass, false, nullptr, ETeleportType::TeleportPhysics);
 			GetSimulatingHandConstraint()->SetConstrainedComponents(GetPhysicsRoot(), EName::None, SkelMesh, BoneName);
+
+			if(bInitializedConstraint)
+			{
+				GetSimulatingHandConstraint()->SetConstraintReferenceFrame(EConstraintFrame::Frame1, Frame1);				
+				GetSimulatingHandConstraint()->SetConstraintReferenceFrame(EConstraintFrame::Frame2, Frame2);
+			}
+			else
+			{
+				GetSimulatingHandConstraint()->GetConstraintReferenceFrame(EConstraintFrame::Frame1, Frame1);				
+				GetSimulatingHandConstraint()->GetConstraintReferenceFrame(EConstraintFrame::Frame2, Frame2);
+				bInitializedConstraint= true;
+			}
 			
 			GetSimulatingHandConstraint()->SetConstraintToForceBased(true);
 			OwningController->bDisableLowLatencyUpdate = true;
@@ -841,14 +854,15 @@ void ATVRGraspingHand::SetupPhysicsIfNeededNative(bool bSimulate, bool bSetRelat
 	}
 	else
 	{
-		GetSimulatingHandConstraint()->BreakConstraint();		
+		GetSimulatingHandConstraint()->BreakConstraint();
 		USkeletalMeshComponent* SkelMesh = GetSkeletalMeshComponent();
 		SkelMesh->SetSimulatePhysics(false);
 		if(bIsPhysicalHand && GetPhysicalAnimation())
 		{
 			GetPhysicalAnimation()->RefreshWeldedBoneDriver();
-			// SkelMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		} else
+			SkelMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		} 
+		else
 		{
 			SkelMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
@@ -859,13 +873,13 @@ void ATVRGraspingHand::SetupPhysicsIfNeededNative(bool bSimulate, bool bSetRelat
 void ATVRGraspingHand::InitializeAndAttach(const FBPActorGripInformation& GripInfo, bool bIsSecondaryGrip,
 	bool bSkipEvaluation)
 {
-	SetFingerOverlaps(true);
+	SetFingerOverlaps(true); // skip evaluation
 	GrippedObject = GripInfo.GrippedObject;
 	GraspID = GripInfo.GripID;
-	if(GetPhysicsRoot())
+	if(GetPhysicsRoot() && GetRootPhysics())
 	{
 		const FTransform RootTransform = GetPhysicsRoot()->GetComponentTransform();
-		FAttachmentTransformRules AttachRule = FAttachmentTransformRules::SnapToTargetNotIncludingScale;
+		FAttachmentTransformRules AttachRule = FAttachmentTransformRules::KeepWorldTransform;
 		AttachRule.bWeldSimulatedBodies = true;
 		GetRootPhysics()->AttachToComponent(GetPhysicsRoot(), AttachRule);
 	}
@@ -885,22 +899,21 @@ void ATVRGraspingHand::InitializeAndAttach(const FBPActorGripInformation& GripIn
 		UPrimitiveComponent* GrippedComp = Cast<UPrimitiveComponent>(GripInfo.GrippedObject);
 		AttachmentProxy->AttachToComponent(GrippedComp, AttachRule, GripInfo.GrippedBoneName);
 	}
-	FTransform AttachTransform;
-	FTransform ScalerTransform = BaseRelativeTransform;
-	ScalerTransform.SetScale3D(FVector::OneVector);
+
 
 	if(bUseTargetMeshTransform) // we have a hand socket
 	{
 		AttachmentProxy->SetWorldLocationAndRotation(
 			TargetMeshTransform.GetLocation(),
 			TargetMeshTransform.Rotator(),
-			false, nullptr,
-			ETeleportType::TeleportPhysics
+			false, nullptr //,
+			// ETeleportType::TeleportPhysics
 		);
 	}
 	else
 	{
 		if (!bIsSecondaryGrip) {
+			FTransform ScalerTransform = BaseRelativeTransform;
 			const FTransform A = ScalerTransform * OwningController->GetComponentTransform();
 			const FTransform GripRelTransform = bIsSecondaryGrip ?
 				GripInfo.SecondaryGripInfo.SecondaryRelativeTransform.Inverse() :
@@ -911,7 +924,7 @@ void ATVRGraspingHand::InitializeAndAttach(const FBPActorGripInformation& GripIn
 		}
 		else // here we want to keep the world position
 		{
-			AttachmentProxy->SetWorldTransform(GetSkeletalMeshComponent()->GetComponentTransform());
+			AttachmentProxy->SetWorldTransform(GetSkeletalMeshComponent()->GetComponentTransform(), false, nullptr, ETeleportType::TeleportPhysics);
 			AttachmentProxy->SetWorldScale3D(FVector::OneVector);
 		}
 	}

@@ -240,7 +240,11 @@ public:
 	
 	ATVRGraspingHand* GetGraspingHand(EControllerHand HandType) const;
 	ATVRGraspingHand* GetGraspingHand(UGripMotionControllerComponent* Controller) const;
-	
+
+
+	UPROPERTY(Category = Hand, EditDefaultsOnly)
+	bool bGraspingHands;
+
 protected: // Methods
 
 	/** Handles any Movement logic during Tick. Do not call elsewhere */
