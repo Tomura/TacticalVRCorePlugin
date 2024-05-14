@@ -271,6 +271,9 @@ protected: // Methods
 	void OnAxisMoveY(float Value);
 	
 	UFUNCTION(Category = "Character|InputActions", BlueprintCallable)
+	void OnAxisMove(const FVector2D& Value);
+	
+	UFUNCTION(Category = "Character|InputActions", BlueprintCallable)
 	void OnTriggerAxisL(float Value);
 	UFUNCTION(Category = "Character|InputActions", BlueprintCallable)
 	void OnTriggerAxisR(float Value);

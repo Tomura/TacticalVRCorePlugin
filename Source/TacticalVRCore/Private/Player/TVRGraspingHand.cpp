@@ -540,6 +540,7 @@ void ATVRGraspingHand::SetFingerOverlaps(bool bEnableOverlaps)
 
 void ATVRGraspingHand::SetWeaponCollisionResponse(ECollisionResponse NewResponse)
 {
+	UE_LOG(LogTemp, Log, TEXT("Setting Collision Response to something"));
 	if(IsValid(GetSkeletalMeshComponent()))
 	{
 		GetSkeletalMeshComponent()->SetCollisionResponseToChannel(ECC_WeaponObjectChannel, NewResponse);
@@ -570,7 +571,7 @@ void ATVRGraspingHand::OnGrippedObject(const FBPActorGripInformation& GripInfo)
 		bIsGripping = true;
 	
 		RetrievePoses(GripInfo,false);
-		//InitializeAndAttach(GripInfo, false, false);
+		InitializeAndAttach(GripInfo, false, false);
 
 		// finalize
 		StopLerpHand();
@@ -860,12 +861,8 @@ void ATVRGraspingHand::SetupPhysicsIfNeededNative(bool bSimulate, bool bSetRelat
 		if(bIsPhysicalHand && GetPhysicalAnimation())
 		{
 			GetPhysicalAnimation()->RefreshWeldedBoneDriver();
-			SkelMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		} 
-		else
-		{
-			SkelMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
+		SkelMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		SkelMesh->SetAllMassScale(0.f);
 	}
 }
@@ -876,6 +873,12 @@ void ATVRGraspingHand::InitializeAndAttach(const FBPActorGripInformation& GripIn
 	SetFingerOverlaps(true); // skip evaluation
 	GrippedObject = GripInfo.GrippedObject;
 	GraspID = GripInfo.GripID;
+
+	// === temporary while welding bug
+	GetSkeletalMeshComponent()->SetSimulatePhysics(false);
+	GetSkeletalMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	// ===
+	
 	if(GetPhysicsRoot() && GetRootPhysics())
 	{
 		const FTransform RootTransform = GetPhysicsRoot()->GetComponentTransform();
@@ -900,14 +903,13 @@ void ATVRGraspingHand::InitializeAndAttach(const FBPActorGripInformation& GripIn
 		AttachmentProxy->AttachToComponent(GrippedComp, AttachRule, GripInfo.GrippedBoneName);
 	}
 
-
 	if(bUseTargetMeshTransform) // we have a hand socket
 	{
 		AttachmentProxy->SetWorldLocationAndRotation(
 			TargetMeshTransform.GetLocation(),
 			TargetMeshTransform.Rotator(),
-			false, nullptr //,
-			// ETeleportType::TeleportPhysics
+			false, nullptr,
+			ETeleportType::TeleportPhysics
 		);
 	}
 	else

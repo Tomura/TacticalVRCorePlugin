@@ -560,6 +560,11 @@ void ATVRCharacter::OnAxisMoveY(float Value)
 	AxisMove.Y = FMath::Clamp(Value, -1.f, 1.f);
 }
 
+void ATVRCharacter::OnAxisMove(const FVector2D& Value)
+{
+	AxisMove = Value.ClampAxes(-1.f, 1.f);
+}
+
 void ATVRCharacter::OnTriggerAxisL(float Value)
 {
 	TriggerAxisL = FMath::Clamp(Value, 0.f, 1.f);
@@ -700,7 +705,6 @@ bool ATVRCharacter::TryGrip(UGripMotionControllerComponent* Hand, bool bIsLargeG
 		FHitResult* BestHit = nullptr;
 		uint8 BestPriority = 0;
 		UObject* BestObject = nullptr;
-		FVector BestLoc;
 		for(FHitResult& Hit : Hits)
 		{
 			UObject* GripInterface = nullptr;
@@ -753,7 +757,7 @@ bool ATVRCharacter::TryGrip(UGripMotionControllerComponent* Hand, bool bIsLargeG
 						IVRGripInterface::Execute_ClosestGripSlotInRange(BestObject, Hand->GetComponentLocation(), true, bHasSecondary, SecondaryTF, SlotName, Hand, EName::None);
 						if(!bHasSecondary)
 						{
-							DeltaPrio = 1; // we do not wanna steal is possible							
+							DeltaPrio = 1; // we do not want to steal if possible							
 						}
 					}
 				}
@@ -1166,7 +1170,9 @@ bool ATVRCharacter::AttemptToPrimaryGripObject(const FTransform& GripTransform, 
 	FTransform RelativeGripTransform;
 	if(bHadSlotInRange)
 	{
-		RelativeGripTransform = GripTransform.GetRelativeTransform(SlotWorldTransform);
+		// correct slot
+		// x:0, y:5, z:90 -> x:0, y:60, z:90
+		RelativeGripTransform = GripTransform.GetRelativeTransform( SlotWorldTransform);
 		RelativeGripTransform.SetScale3D(FVector(1.f, 1.f, 1.f));		
 	}
 	else

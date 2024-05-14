@@ -100,11 +100,9 @@ float UTVRTriggerComponent::GetParentTriggerAxis() const
 {
 	if(UsingController)
 	{
-		ACharacter* CharacterOwner = Cast<ACharacter>(UsingController->GetOwner());
-		EControllerHand HandType;
-		UsingController->GetHandType(HandType);
-		const FName AxisName = HandType == EControllerHand::Left ? FName("TriggerAxis_L") : FName("TriggerAxis_R");
-		return CharacterOwner->GetInputAxisValue(AxisName);
+		ATVRCharacter* CharacterOwner = Cast<ATVRCharacter>(UsingController->GetOwner());
+		const auto Hand = CharacterOwner->GetGraspingHand(UsingController);
+		return Hand->TriggerPress;
 	}
 	return 0.f;
 }
