@@ -508,7 +508,9 @@ protected:
 	void UnlockBolt();
 	
 	virtual void CollectWeaponMeshes();
-	
+
+	UPROPERTY(Category="Gripping", EditDefaultsOnly, AdvancedDisplay)
+	FTransform CorrectionTransform;
 	
 	UPROPERTY()
     class UStaticMeshComponent* LoadedBullet;

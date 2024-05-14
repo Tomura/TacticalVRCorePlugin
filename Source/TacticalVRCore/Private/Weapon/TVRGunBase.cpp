@@ -136,8 +136,6 @@ ATVRGunBase::ATVRGunBase(const FObjectInitializer& OI) : Super(OI)
 	SelectorAudio = nullptr;
 
 	bForceRecompile = false;
-
-	CorrectionTransform = FTransform(FRotator(55.f, 0.f, 0.f));
 }
 
 void ATVRGunBase::OnConstruction(const FTransform& Transform)
@@ -413,7 +411,7 @@ void ATVRGunBase::ClosestGripSlotInRange_Implementation(FVector WorldLocation, b
         {
             bHadSlotInRange = true;
             SlotName = ATVRGunBase::PrimarySlotName;
-            SlotWorldTransform = CorrectionTransform * SlotTransform;
+            SlotWorldTransform = SlotTransform;
             return;
         }
     }

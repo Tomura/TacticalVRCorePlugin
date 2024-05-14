@@ -71,8 +71,7 @@ ATVRMagazine::ATVRMagazine(const FObjectInitializer& OI) : Super(OI)
 
 	HandSocket = nullptr;
 	CartridgeType = nullptr;
-
-	CorrectionTransform = FTransform(FRotator(55.f, 0.f, 0.f));
+	
 }
 
 void ATVRMagazine::BeginPlay()
@@ -202,9 +201,9 @@ FTransform ATVRMagazine::GetGripSlotTransform_Implementation(UGripMotionControll
 	UHandSocketComponent* MyHandSocket = ITVRHandSocketInterface::Execute_GetHandSocket(this, FName(TEXT("Magazine")));
 	if(MyHandSocket)
 	{
-		return CorrectionTransform * MyHandSocket->GetHandSocketTransform(Hand);
+		return MyHandSocket->GetHandSocketTransform(Hand);
 	}
-    return CorrectionTransform * GripSlot->GetComponentTransform();
+    return GripSlot->GetComponentTransform();
 }
 
 void ATVRMagazine::InitMagazine()

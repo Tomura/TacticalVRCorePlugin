@@ -63,9 +63,6 @@ public:
 	FVector GetCenterOfMass() const;
 	FVector SavedCenterOfMass;
 
-	UPROPERTY(Category="Magazine", AdvancedDisplay, EditDefaultsOnly)
-	FTransform CorrectionTransform;
-
 	/**
      * Override so that the Primary Grip Type changes to prevent sudden detachment when the magazine is attached to a weapon
      */
