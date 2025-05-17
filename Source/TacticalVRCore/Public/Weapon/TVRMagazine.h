@@ -52,6 +52,8 @@ public:
 	virtual void OnGrip_Implementation(UGripMotionControllerComponent* GrippingController, const FBPActorGripInformation& GripInformation) override;
 	virtual void OnGripRelease_Implementation(UGripMotionControllerComponent* ReleasingController, const FBPActorGripInformation& GripInformation, bool bWasSocketed) override;
 
+	virtual bool RequestsSocketing_Implementation(USceneComponent*& ParentToSocketTo, FName& OptionalSocketName, FTransform_NetQuantize& RelativeTransform) override;
+	
 	virtual bool SimulateOnDrop_Implementation() override;
 
 	virtual class UHandSocketComponent* GetHandSocket_Implementation(FName SlotName) const override;

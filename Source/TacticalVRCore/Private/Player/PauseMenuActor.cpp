@@ -22,4 +22,3 @@ void APauseMenuActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
-

@@ -17,11 +17,15 @@ AWPNA_PistolLaserLight::AWPNA_PistolLaserLight(const FObjectInitializer& OI) : S
 	LaserBeam->SetupAttachment(GetStaticMeshComponent());
 	LaserBeam->SetCollisionProfileName(COLLISION_NO_COLLISION);
 	LaserBeam->SetVisibility(false);
+	LaserBeam->SetCastShadow(false);
+	LaserBeam->bCastDynamicShadow = false;
 
 	LaserImpactMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("LaserBeamImpactMesh"));
 	LaserImpactMesh->SetupAttachment(LaserBeam);
 	LaserImpactMesh->SetCollisionProfileName(COLLISION_NO_COLLISION);
 	LaserImpactMesh->SetVisibility(false);
+	LaserImpactMesh->SetCastShadow(false);
+	LaserImpactMesh->bCastDynamicShadow = false;
 	
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;

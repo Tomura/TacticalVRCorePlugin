@@ -12,6 +12,8 @@
 #include "Weapon/Component/TVRMagazineWell.h"
 #include "Weapon/Component/TVRMagWellComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
+#include "Inventory/TVRAmmoSlot.h"
+#include "Player/TVRCharacter.h"
 
 ATVRMagazine::ATVRMagazine(const FObjectInitializer& OI) : Super(OI)
 {
@@ -170,6 +172,37 @@ void ATVRMagazine::OnGripRelease_Implementation(UGripMotionControllerComponent* 
 {
 	Super::OnGripRelease_Implementation(ReleasingController, GripInformation, bWasSocketed);
 	bIsMagReleasePressed = false;
+
+	if(bWasSocketed)
+	{
+		
+	}
+}
+
+bool ATVRMagazine::RequestsSocketing_Implementation(USceneComponent*& ParentToSocketTo, FName& OptionalSocketName,
+	FTransform_NetQuantize& RelativeTransform)
+{
+	if(const auto CharacterOwner = Cast<ATVRCharacter>(GetOwner()))
+	{
+		TArray<UTVRAmmoSlot*> Slots;
+		CharacterOwner->GetComponents<UTVRAmmoSlot>(Slots);
+		const FVector HandSocketLoc = HandSocket->GetComponentLocation();
+		Slots.Sort([HandSocketLoc] (const UTVRAmmoSlot& A, const UTVRAmmoSlot& B)
+		{
+			return (A.GetComponentLocation() - HandSocketLoc).SizeSquared() > (B.GetComponentLocation() - HandSocketLoc).SizeSquared();
+		});
+
+		for(const auto Slot: Slots)
+		{
+			if(Slot->CanAcceptMagazine(this))
+			{				
+				ParentToSocketTo = Slot;
+				RelativeTransform = GetTransform().GetRelativeTransform(ParentToSocketTo->GetComponentTransform());
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 bool ATVRMagazine::SimulateOnDrop_Implementation()

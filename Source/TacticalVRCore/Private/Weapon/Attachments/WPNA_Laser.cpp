@@ -20,11 +20,15 @@ AWPNA_Laser::AWPNA_Laser(const FObjectInitializer& OI) : Super(OI)
 	LaserBeam->SetupAttachment(GetStaticMeshComponent());
 	LaserBeam->SetCollisionProfileName(COLLISION_NO_COLLISION);
 	LaserBeam->SetVisibility(false);
+	LaserBeam->SetCastShadow(false);
+	LaserBeam->bCastDynamicShadow = false;
 
 	LaserImpactMesh = CreateDefaultSubobject<UStaticMeshComponent>(FName("LaserBeamImpactMesh"));
 	LaserImpactMesh->SetupAttachment(LaserBeam);
 	LaserImpactMesh->SetCollisionProfileName(COLLISION_NO_COLLISION);
 	LaserImpactMesh->SetVisibility(false);
+	LaserImpactMesh->SetCastShadow(false);
+	LaserImpactMesh->bCastDynamicShadow = false;
 	
 
 	LaserToggleSound = CreateDefaultSubobject<UAudioComponent>(FName("LaserToggleSound"));

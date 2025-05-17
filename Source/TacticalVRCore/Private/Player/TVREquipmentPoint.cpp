@@ -13,6 +13,7 @@ UTVREquipmentPoint::UTVREquipmentPoint()
 	// off to improve performance if you don't need them.
 	SetCollisionProfileName(COLLISION_NO_COLLISION);
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
 
 	AttachedActor = nullptr;
 	AttachRange = 40.f;
@@ -27,6 +28,7 @@ void UTVREquipmentPoint::OnChildAttached(USceneComponent* ChildComponent)
 	{
 		AttachedActor = Gun;
 		Gun->SetCollisionProfile(FName("WeaponEquipped"));
+		SetComponentTickEnabled(true);
 	}
 }
 
@@ -75,6 +77,15 @@ void UTVREquipmentPoint::TickComponent(float DeltaTime, ELevelTick TickType,
 		const FVector NewRelLoc = FMath::VInterpTo(RelLoc, TargetLoc, DeltaTime, LerpSpeed);
 		const FRotator NewRelRot = FMath::RInterpTo(RelRot, TargetTransform.GetRotation().Rotator(), DeltaTime, LerpRotSpeed);
 		AttachedActor->GetRootComponent()->SetRelativeLocationAndRotation(NewRelLoc, NewRelRot, false);
+
+		if((TargetLoc - RelLoc).IsNearlyZero() && (NewRelRot - RelRot).IsNearlyZero())
+		{
+			SetComponentTickEnabled(false);
+		}
+	}
+	else
+	{
+		SetComponentTickEnabled(false);
 	}
 }
 
