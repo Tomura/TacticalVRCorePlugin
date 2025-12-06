@@ -93,7 +93,7 @@ public:
 	
 	virtual void SetAudioComponent_Implementation(class UAudioComponent* NewComp) override {}
 	
-	virtual bool IsReciprocating_Implementation() const {return bIsReciprocating;}
+	virtual bool IsReciprocating_Implementation()  const override {return bIsReciprocating;}
 
 	virtual ETVRLeftRight GetGrabLocation_Implementation() const override { return GrabLocation; }
 
