@@ -8,6 +8,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Libraries/TVRFunctionLibrary.h"
 #include "Player/TVRCharacter.h"
+#include "Weapon/TVRCartridge.h"
 #include "Sound/SoundCue.h"
 
 #define MAG_AUDIO_StartInsert 0

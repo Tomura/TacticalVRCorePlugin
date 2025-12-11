@@ -4,6 +4,7 @@
 
 #include "Components/AudioComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "GripMotionControllerComponent.h"
 #include "Weapon/TVRCartridge.h"
 #include "TacticalTraceChannels.h"
 

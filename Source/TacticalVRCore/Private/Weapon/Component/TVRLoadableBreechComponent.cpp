@@ -7,6 +7,7 @@
 #include "TacticalCollisionProfiles.h"
 #include "Components/AudioComponent.h"
 #include "Weapon/TVRCartridge.h"
+#include "GripMotionControllerComponent.h"
 #include "Weapon/Component/TVRGunFireComponent.h"
 
 #define MAG_AUDIO_StartInsert 0

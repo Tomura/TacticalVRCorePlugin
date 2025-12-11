@@ -4,6 +4,7 @@
 #include "TacticalCollisionProfiles.h"
 #include "Components/AudioComponent.h"
 #include "Weapon/TVRGunBase.h"
+#include "GripMotionControllerComponent.h"
 #include "Weapon/Component/TVRGunFireComponent.h"
 
 UTVRPistolSlide::UTVRPistolSlide(const FObjectInitializer& OI) : Super(OI)

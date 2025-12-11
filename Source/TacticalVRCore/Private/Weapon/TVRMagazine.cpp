@@ -14,6 +14,7 @@
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Inventory/TVRAmmoSlot.h"
 #include "Player/TVRCharacter.h"
+#include "Weapon/TVRCartridge.h"
 
 ATVRMagazine::ATVRMagazine(const FObjectInitializer& OI) : Super(OI)
 {

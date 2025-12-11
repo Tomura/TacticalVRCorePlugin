@@ -10,7 +10,10 @@
 #include "Weapon/Component/TVRAttachPoint_Underbarrel.h"
 #include "GripMotionControllerComponent.h"
 #include "Grippables/HandSocketComponent.h"
+#include "Components/SplineComponent.h"
 #include "Weapon/Attachments/WPNA_Sight.h"
+
+
 
 class UTVRCoreGameplaySettings;
 
